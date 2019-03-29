@@ -1,0 +1,19 @@
+{
+  "name": "docker-dev-ethereum",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabkk/docker-dev-ethereum.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gabkk/docker-dev-ethereum/issues"
+  },
+  "homepage": "https://github.com/gabkk/docker-dev-ethereum#readme"
+}
