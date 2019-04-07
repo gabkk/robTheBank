@@ -1,5 +1,5 @@
 var CoinFlip = artifacts.require("./CoinFlip.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(CoinFlip);
+  deployer.deploy(CoinFlip, {value: 100000000});
 };
