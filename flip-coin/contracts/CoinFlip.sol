@@ -1,87 +1,101 @@
 pragma solidity ^0.5.0;
 
 contract CoinFlip {
-    address owner;
-    mapping (address => bool) lastFlip;
-    mapping (address => uint256) userBalance;
+	address owner;
+	int256 private maxInt = 57896044618658097711785492504343953926634992332820282019728792003956564819967;
+	int256 private minInt = maxInt + 1;
+	mapping (address => bool) lastFlip;
+	uint256 contractBalance;
+	mapping (address => int256) userHistory;
 
-    event resultOfFlip(string result);
-    event calculOfRandom(uint timestamp, uint difficulty, uint result);
+	constructor() public payable{
+		owner = msg.sender;
 
-    constructor() public payable{
-        owner = msg.sender;
+		// Contract address
+		contractBalance = msg.value;
+		lastFlip[msg.sender] = false;
+	}
 
-        // User address
-	    userBalance[msg.sender] = 0;
+	modifier onlyOwner{
+		require(owner == msg.sender);
+		_;
+	}
 
-	    // Contract address
-	    userBalance[address(this)] = msg.value;
-    	lastFlip[msg.sender] = false;
-    }
+	function getBankBalance() view public returns(uint256){
+		return contractBalance;
+	}
 
-    modifier onlyOwner{
-    	require(owner == msg.sender);
-    	_;
-    }
+	// Get the balance of the user
+	function getUserHistory(address player) view public returns(int256){
+		return userHistory[player];
+	}
 
-    function getContract() view public returns(uint){
-        return address(this).balance;
-    }
+	// Get the result of the player flip
+	function getLastFlip(address player) view public returns(bool){
+		return lastFlip[player];
+	}
 
-    function getBankBalance() view public returns(uint){
-        return userBalance[address(this)];
-    }
+	/*
+	* As the timestamp can be control by the miner we need to set
+	* a max limit per bet in the flip function.
+	*/
+	function pseudoRandom() private view returns (uint8) {
+		uint8 result = uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%251); 
+		return result;
+	}
 
-    function getUserBalance(address player) view public returns(uint){
-        return userBalance[player];
-    }
+	/*	Error Cases
+	*
+	*	error -1 Bet can't be more than 0.5
+	*	error -2 user bet could't be null
+	*	error -3 Contract address don't have enought found to pay the user
+	*	error -4 The value is too big regarding to the previous contract rules
+	*			 and it will make fail the implicit cast for the player historic
+	*
+	*/
 
-    function getLastFlip(address player) view public returns(bool){
-        return lastFlip[player];
-    }
+	function flip() payable public{
+		
+		require(0.5 ether > msg.value, "-1");
+		require(msg.value > 0, "-2");
+		
+		uint256 jackpotValue = msg.value * 2;
+		require(contractBalance >= jackpotValue, "-3");
 
-    function random() private returns (uint8) {
-       uint8 result = uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%251); 
-	   emit calculOfRandom(block.timestamp, block.difficulty, result);
-       return result;
-   }
+		/*
+		*
+		*	The value is too big regarding to the previous contract rules
+		*	and it will make fail the implicit cast for the player history
+		* 
+		*/
+		require(int256(jackpotValue) > minInt && int256(jackpotValue) < maxInt, "-4");
 
-    //	NEED TO SECURE THIS
-    //	error -1 user balance insuffisant
-    //	error -2 user bet could't be null
-    //	error -3 Contract address don't have enought found to pay the user
 
-    function flip() payable public{
-    	require(userBalance[msg.sender] >= msg.value, "-1");
-    	require(msg.value > 0, "-2");
-    	uint256 jackpotValue = msg.value * 2;
-    	require(userBalance[address(this)] >= jackpotValue, "-3");
-        uint randomResult = random();
-        uint bet = msg.value;
+		// Run the pseudorandom function
+		uint randomResult = pseudoRandom();
 
-        if(randomResult % 2 == 0){
-        	userBalance[msg.sender] += jackpotValue;
-            userBalance[address(this)] -= jackpotValue;
-            lastFlip[msg.sender] = true;
-    	    emit resultOfFlip("gagne");
-        } else {
-        	userBalance[msg.sender] -= msg.value;
-            userBalance[address(this)] += msg.value;
-            lastFlip[msg.sender] = false;
-	        emit resultOfFlip("perd");
-        }
-    }
+		if(randomResult % 2 == 0){
+			contractBalance -= msg.value;
+			msg.sender.transfer(jackpotValue);
+			userHistory[msg.sender] += int256(jackpotValue);
+			lastFlip[msg.sender] = true;
+		} else {
+			contractBalance += msg.value;
+			userHistory[msg.sender] -= int256(msg.value);
+			lastFlip[msg.sender] = false;
+		}
+	}
 
-    function playerWithdraw(address player) public{
-    	require(msg.sender == player);
-        msg.sender.transfer(userBalance[player]);
-    }
+	function sendMoneyToTheBank() payable public onlyOwner{
+		contractBalance += msg.value;
+	}
 
-    function sendMoneyToTheBank() payable public{
-    	userBalance[address(this)] += msg.value;
-    }
+	function withdrawBankAccount() public onlyOwner{
+		msg.sender.transfer(contractBalance);
+		contractBalance = 0;
+	}
 
-    function sendMoneyToThePlayer() payable public{
-    	userBalance[msg.sender] += msg.value;
-    }
+	function destroyContract() public onlyOwner{
+		selfdestruct(owner);
+	}
 }
