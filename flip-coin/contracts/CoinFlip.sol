@@ -5,14 +5,17 @@ contract CoinFlip {
 	int256 private maxInt = 57896044618658097711785492504343953926634992332820282019728792003956564819967;
 	int256 private minInt = maxInt + 1;
 	mapping (address => bool) lastFlip;
-	uint256 contractBalance;
+	mapping (address => uint256) contractBalance;
 	mapping (address => int256) userHistory;
+	address[] public listOfBank;
 
 	constructor() public payable{
 		owner = msg.sender;
 
 		// Contract address
-		contractBalance = msg.value;
+		require(msg.value > 0);
+		contractBalance[msg.sender] = msg.value;
+		listOfBank.push(msg.sender);
 		lastFlip[msg.sender] = false;
 	}
 
@@ -21,8 +24,18 @@ contract CoinFlip {
 		_;
 	}
 
-	function getBankBalance() view public returns(uint256){
-		return contractBalance;
+	function createBank() public payable{
+		require(contractBalance[msg.sender] == 0);
+		contractBalance[msg.sender] = msg.value;
+		listOfBank.push(msg.sender);
+	}
+
+	function getListOfBank() view public returns(address[] memory){
+		return listOfBank;
+	}
+
+	function getBankBalance(address _bankAddr) view public returns(uint256){
+		return contractBalance[_bankAddr];
 	}
 
 	// Get the balance of the user
@@ -54,13 +67,13 @@ contract CoinFlip {
 	*
 	*/
 
-	function flip() payable public{
+	function flip(address _bankAddr) payable public{
 		
 		require(0.5 ether > msg.value, "-1");
 		require(msg.value > 0, "-2");
 		
 		uint256 jackpotValue = msg.value * 2;
-		require(contractBalance >= jackpotValue, "-3");
+		require(contractBalance[_bankAddr] >= jackpotValue, "-3");
 
 		/*
 		*
@@ -75,27 +88,34 @@ contract CoinFlip {
 		uint randomResult = pseudoRandom();
 
 		if(randomResult % 2 == 0){
-			contractBalance -= msg.value;
+			contractBalance[_bankAddr] -= msg.value;
 			msg.sender.transfer(jackpotValue);
 			userHistory[msg.sender] += int256(jackpotValue);
 			lastFlip[msg.sender] = true;
 		} else {
-			contractBalance += msg.value;
+			contractBalance[_bankAddr] += msg.value;
 			userHistory[msg.sender] -= int256(msg.value);
 			lastFlip[msg.sender] = false;
 		}
 	}
 
-	function sendMoneyToTheBank() payable public onlyOwner{
-		contractBalance += msg.value;
+	function sendMoneyToTheBank(address _bankAddr) payable public onlyOwner{
+		contractBalance[_bankAddr] += msg.value;
 	}
 
-	function withdrawBankAccount() public onlyOwner{
-		msg.sender.transfer(contractBalance);
-		contractBalance = 0;
+	function withdrawBankAccount(address _bankAddr) public onlyOwner{
+		msg.sender.transfer(contractBalance[_bankAddr]);
+		contractBalance[_bankAddr] = 0;
 	}
 
 	function destroyContract() public onlyOwner{
-		selfdestruct(owner);
+		selfdestruct(msg.sender);
+	}
+
+	function isOwner() public view returns(bool status){
+		if(msg.sender == owner)
+			return true;
+		else
+			return false;
 	}
 }
