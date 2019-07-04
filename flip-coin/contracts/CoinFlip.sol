@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 contract CoinFlip {
-	address owner;
+	address public owner;
 	int256 private maxInt = 57896044618658097711785492504343953926634992332820282019728792003956564819967;
 	int256 private minInt = maxInt + 1;
 	mapping (address => bool) lastFlip;
