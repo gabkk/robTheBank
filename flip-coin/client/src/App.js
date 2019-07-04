@@ -17,6 +17,7 @@ class App extends Component {
       userHistory: 0,
       sendFund: "0",
       lastFlip: "not play yet",
+      listOfBank: null
     }
     this.setAmount = this.setAmount.bind(this);
   };
@@ -43,17 +44,33 @@ class App extends Component {
         CoinFlip.abi,
         deployedNetwork && deployedNetwork.address
       );
+      let listOfBank;
+
+      try {
+        listOfBank = await instance.methods.getListOfBank().call();
+        console.log("listOfBank");
+        console.log(listOfBank);
+        this.setState({listOfBank: listOfBank});
+      } catch (error){
+        console.log("list of bank empty");
+      }
+
       // Add try catch here
-      const initialAmount = await instance.methods.getBankBalance().call();
+      const initialAmount = await instance.methods.getBankBalance(listOfBank[0]).call();
+      
+      console.log("initialAmount of bank owner " + initialAmount[0]);
+
       const userHistory = await instance.methods.getUserHistory(accounts[0]).call();
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
+
       this.setState({ web3,
                       accounts,
                       contract: instance,
                       bankFund: initialAmount,
                       userFund: userAmount,
-                      userHistory: userHistory}
+                      userHistory: userHistory,
+                      listOfBank: listOfBank}
                     , this.runExample);
       console.log(instance);
       console.log(networkId);
@@ -66,10 +83,13 @@ class App extends Component {
   };
 
   runExample = async () => {
+
     try {
       const { contract } = this.state;
 
       // // Get the value from the contract to prove it worked.
+      console.log("Inside run Exqmple");
+      console.log(this.state.listOfBank[0]);
       const response = await contract.methods.getBankBalance().call();
       // Update state with the result.
       this.setState({ bankFund: response });
@@ -84,15 +104,16 @@ class App extends Component {
     if (!isNaN(this.state.sendAmountToBet)){
       let bankBalance = 0;
       let userBalance = 0;
-      let userHistoric = 0;
+      let userHistory = 0;
       let gameStatus = "not play yet";
       try {
-        await contract.methods.flip().send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 90000});
         try {
-          bankBalance = await contract.methods.getBankBalance().call();
+          bankBalance = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
         } catch (error){
           console.log("fail to get Bank balance");
         }
+        await contract.methods.flip(this.state.listOfBank[0]).send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 900000});
+
         try {
           userHistory = await contract.methods.getUserHistory(this.state.accounts[0]).call();
           console.log("this is user historic" + userHistory);
@@ -123,7 +144,7 @@ class App extends Component {
                         bankFund: bankBalance,
                       });
       } catch (error){
-        console.log("error When fliping");
+        console.log("error When fliping"+ error);
       }
     }
   };
@@ -131,13 +152,14 @@ class App extends Component {
   sendMoney = async (dst) => {
     const { accounts, contract } = this.state;
     if (dst === "bank"){
+      console.log(this.state.sendFund);
       try{
-        await contract.methods.sendMoneyToTheBank().send({ from: accounts[0], value: parseInt(this.state.sendFund)});
+        await contract.methods.sendMoneyToTheBank(this.state.listOfBank[0]).send({from: accounts[0], value: parseInt(this.state.sendFund)});
       } catch(error){
-        console.log("send money to bank failed");
+        console.log("send money to bank failed" + error);
       }
       try {
-        const response = await contract.methods.getBankBalance().call();
+        const response = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
         this.setState({ bankFund: response});
       } catch (error){
         console.log("fail to get Bank balance");
@@ -148,6 +170,7 @@ class App extends Component {
   setAmount(e) {
     if (e.target.name === "valueToSendToBank"){
       this.setState({ sendFund: e.target.value });
+      console.log("value to bank" + e.target.value);
     } else if (e.target.name === "valueToBet"){
       this.setState({ sendAmountToBet: e.target.value });
     }
