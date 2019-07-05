@@ -90,7 +90,7 @@ class App extends Component {
       // // Get the value from the contract to prove it worked.
       console.log("Inside run Exqmple");
       console.log(this.state.listOfBank[0]);
-      const response = await contract.methods.getBankBalance().call();
+      const response = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
       // Update state with the result.
       this.setState({ bankFund: response });
       
@@ -107,13 +107,7 @@ class App extends Component {
       let userHistory = 0;
       let gameStatus = "not play yet";
       try {
-        try {
-          bankBalance = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
-        } catch (error){
-          console.log("fail to get Bank balance");
-        }
         await contract.methods.flip(this.state.listOfBank[0]).send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 900000});
-
         try {
           userHistory = await contract.methods.getUserHistory(this.state.accounts[0]).call();
           console.log("this is user historic" + userHistory);
@@ -131,6 +125,11 @@ class App extends Component {
           }
         } catch (error){
             console.log("fail to get last flip");
+        }
+        try {
+          bankBalance = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
+        } catch (error){
+          console.log("fail to get Bank balance");
         }
         try{
           userBalance = await this.state.web3.eth.getBalance(accounts[0]);
