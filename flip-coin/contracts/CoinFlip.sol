@@ -90,7 +90,7 @@ contract CoinFlip {
 		if(randomResult % 2 == 0){
 			contractBalance[_bankAddr] -= msg.value;
 			msg.sender.transfer(jackpotValue);
-			userHistory[msg.sender] += int256(jackpotValue);
+			userHistory[msg.sender] += int256(msg.value);
 			lastFlip[msg.sender] = true;
 		} else {
 			contractBalance[_bankAddr] += msg.value;
