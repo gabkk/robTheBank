@@ -4,6 +4,16 @@ import getWeb3 from "./utils/getWeb3";
 
 import "./App.css";
 
+class SelectBank extends React.Component{
+    render(){
+      return (
+      <select value={this.props.value} name={this.props.name} onChange={this.props.onSelect}> {this.props.items.map((item,index) =>{
+          return <option key={item} value={index}>{item}</option>})}
+      </select>
+      )
+    }
+  }
+
 class App extends Component {
   constructor(props){
     super(props);
@@ -15,10 +25,14 @@ class App extends Component {
       bankFund: 0,
       userFund: 0,
       userHistory: 0,
+      sendAmountToSendToTheBank: 0,
       sendFund: "0",
       lastFlip: "not play yet",
-      listOfBank: null
+      listOfBank: null,
+      displayWithraw: false,
+      isBankOwner: false,
     }
+    this.updateBankInfo = this.updateBankInfo.bind(this)
     this.setAmount = this.setAmount.bind(this);
   };
 
@@ -55,10 +69,23 @@ class App extends Component {
         console.log("list of bank empty");
       }
 
+      let isBankOwner = false;
+
+      try {
+        isBankOwner = await instance.methods.isBankOwner(accounts[0]).call();
+        this.setState({isBankOwner: isBankOwner});
+        console.log("is bank owner " + isBankOwner);
+      } catch (error){
+        console.log("isBankOwner failed");
+      }
+      console.log("Is this account :" + accounts[0] + " owner of a bank : " + isBankOwner);
       // Add try catch here
       const initialAmount = await instance.methods.getBankBalance(listOfBank[0]).call();
-      
-      console.log("initialAmount of bank owner " + initialAmount[0]);
+      let displayWithraw;
+      if(listOfBank[0] === accounts[0]){
+        displayWithraw = true;
+      }
+      console.log("initialAmount of bank owner " + initialAmount);
 
       const userHistory = await instance.methods.getUserHistory(accounts[0]).call();
       // Set web3, accounts, and contract to the state, and then proceed with an
@@ -70,8 +97,10 @@ class App extends Component {
                       bankFund: initialAmount,
                       userFund: userAmount,
                       userHistory: userHistory,
-                      listOfBank: listOfBank}
-                    , this.runExample);
+                      listOfBank: listOfBank,
+                      displayWithraw: displayWithraw,
+                      currentBank: listOfBank[0],
+                    }, this.runExample);
       console.log(instance);
       console.log(networkId);
       console.log(deployedNetwork.address);
@@ -84,13 +113,13 @@ class App extends Component {
 
   runExample = async () => {
 
+    const { contract } = this.state;
     try {
-      const { contract } = this.state;
 
       // // Get the value from the contract to prove it worked.
       console.log("Inside run Exqmple");
-      console.log(this.state.listOfBank[0]);
-      const response = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
+      console.log(this.state.currentBank);
+      const response = await contract.methods.getBankBalance(this.state.currentBank).call();
       // Update state with the result.
       this.setState({ bankFund: response });
       
@@ -107,7 +136,7 @@ class App extends Component {
       let userHistory = 0;
       let gameStatus = "not play yet";
       try {
-        await contract.methods.flip(this.state.listOfBank[0]).send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 900000});
+        await contract.methods.flip(this.state.currentBank).send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 900000});
         try {
           userHistory = await contract.methods.getUserHistory(this.state.accounts[0]).call();
           console.log("this is user historic" + userHistory);
@@ -127,7 +156,7 @@ class App extends Component {
             console.log("fail to get last flip");
         }
         try {
-          bankBalance = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
+          bankBalance = await contract.methods.getBankBalance(this.state.currentBank).call();
         } catch (error){
           console.log("fail to get Bank balance");
         }
@@ -153,12 +182,12 @@ class App extends Component {
     if (dst === "bank"){
       console.log(this.state.sendFund);
       try{
-        await contract.methods.sendMoneyToTheBank(this.state.listOfBank[0]).send({from: accounts[0], value: parseInt(this.state.sendFund)});
+        await contract.methods.sendMoneyToTheBank(this.state.currentBank).send({from: accounts[0], value: parseInt(this.state.sendFund)});
       } catch(error){
         console.log("send money to bank failed" + error);
       }
       try {
-        const response = await contract.methods.getBankBalance(this.state.listOfBank[0]).call();
+        const response = await contract.methods.getBankBalance(this.state.currentBank).call();
         this.setState({ bankFund: response});
       } catch (error){
         console.log("fail to get Bank balance");
@@ -166,30 +195,115 @@ class App extends Component {
     }
   };
 
+  withdraw = async () => {
+    const { accounts, contract } = this.state;
+    console.log("Inside withdraw");
+    console.log("accounts" + accounts[0]);
+    console.log("bank" + this.state.currentBank);
+    try{
+      await contract.methods.withdrawBankAccount().send({from: accounts[0]});
+
+    } catch(error){
+      console.log("Failed to witdhraw from bank account" + error);
+    }
+    try {
+      const response = await contract.methods.getBankBalance(this.state.currentBank).call();
+      this.setState({ bankFund: response});
+    } catch (error){
+      console.log("fail to get Bank balance");
+    }
+  };
+
+  createNewBank = async(value) => {
+    const { accounts, contract } = this.state;
+    let listOfBank;
+    try{
+      await contract.methods.createBank().send({from: accounts[0], value: parseInt(this.state.sendAmountToSendToTheBank)});
+    } catch(error){
+      console.log("Failed to witdhraw from bank account" + error);
+    }
+    try {
+      const response = await contract.methods.getBankBalance(this.state.currentBank).call();
+      this.setState({ bankFund: response});
+    } catch (error){
+      console.log("fail to get Bank balance");
+    }
+    try {
+      listOfBank = await contract.methods.getListOfBank().call();
+      this.setState({listOfBank: listOfBank});
+    } catch (error){
+      console.log("list of bank empty");
+    }
+  }
+
+  updateBankInfo = async(event) => {
+    const { contract , accounts} = this.state;
+    let setBankIndex = event.target.value;
+    let listOfBank, isBankOwner;
+    try {
+      listOfBank = await contract.methods.getListOfBank().call();
+      this.setState({listOfBank: listOfBank});
+    } catch (error){
+      console.log("list of bank empty");
+    }
+    console.log("Current bank" + listOfBank[setBankIndex]);
+    try {
+      const response = await contract.methods.getBankBalance(listOfBank[setBankIndex]).call();
+      this.setState({ bankFund: response,
+                      currentBank: listOfBank[setBankIndex]});
+    } catch (error){
+      console.log("fail to get Bank balance");
+    }
+    try {
+      isBankOwner = await contract.methods.isBankOwner(accounts[0]).call();
+      this.setState({isBankOwner: isBankOwner});
+      console.log("is bank owner " + isBankOwner);
+    } catch (error){
+      console.log("isBankOwner failed");
+    }
+    if(accounts[0] === listOfBank[setBankIndex]){
+      this.setState({displayWithraw: true});
+    }
+  }
+
   setAmount(e) {
     if (e.target.name === "valueToSendToBank"){
       this.setState({ sendFund: e.target.value });
       console.log("value to bank" + e.target.value);
     } else if (e.target.name === "valueToBet"){
       this.setState({ sendAmountToBet: e.target.value });
+    } else if (e.target.name === "valueToCreateBank"){
+      this.setState({ sendAmountToSendToTheBank: e.target.value });
     }
+
   };
 
   render() {
     if (!this.state.web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
+      return <div>Please Install Metamask to be able to Play to this smart contract</div>;
     }
     return (
       <div className="App">
-        <h1>Coin Flip v0!</h1>
+        <h1>Robe The Bank</h1>
         <h2>Try to flip a coin</h2>
+
+        <SelectBank items={this.state.listOfBank} value={this.state.activity} onSelect={this.updateBankInfo}/>
         <div>Balance of the bank: {this.state.bankFund}</div>
+        {this.state.displayWithraw &&
+          <button type="button" onClick={this.withdraw.bind(this)}> Withraw</button>
+        }
         <div>Balance of your account: {this.state.userFund}</div>
         <div>History: {this.state.userHistory}</div>
+        {!this.state.isBankOwner &&
+          <input type="text" name="valueToCreateBank" defaultValue='0' onChange={ this.setAmount }/>
+        }
+        {!this.state.isBankOwner &&
+          <button type="button" onClick={this.createNewBank.bind(this)}> create new bank</button>
+        }        
         <input type="text" name="valueToSendToBank" defaultValue='0' onChange={ this.setAmount }/>
         <button type="button" onClick={this.sendMoney.bind(this, "bank")}>Send money to the bank</button>
         <input type="text" name="valueToBet" defaultValue="0" onChange={ this.setAmount }/>
-        <button onClick={this.flip.bind(this)}>Flip</button>
+        <button type="button" onClick={this.flip.bind(this)}>Flip</button>
         <p> You have {this.state.lastFlip}</p>
       </div>
     );
