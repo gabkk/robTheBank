@@ -76,11 +76,11 @@ contract CoinFlip {
 
 	function flip(address _bankAddr) payable public{
 		
-		require(0.5 ether > msg.value, "-1");
-		require(msg.value > 0, "-2");
+		require(0.5 ether > msg.value, "bet should be less than 0.5 eth");
+		require(msg.value > 0, "bet can't be 0");
 		
 		uint256 jackpotValue = msg.value * 2;
-		require(bankBalance[_bankAddr] >= jackpotValue, "-3");
+		require(bankBalance[_bankAddr] >= jackpotValue, "bank balance should be greater than the jackpot");
 
 		/*
 		*
@@ -88,7 +88,7 @@ contract CoinFlip {
 		*	and it will make fail the implicit cast for the player history
 		* 
 		*/
-		require(int256(jackpotValue) > minInt && int256(jackpotValue) < maxInt, "-4");
+		require(int256(jackpotValue) > minInt && int256(jackpotValue) < maxInt, "error in bet");
 
 
 		// Run the pseudorandom function
@@ -106,18 +106,19 @@ contract CoinFlip {
 		}
 	}
 
-	function sendMoneyToTheBank(address bankAddr) public payable isBankCreated{
+	function sendMoneyToTheBank(address bankAddr) public payable {
 		require(bankAddr == msg.sender);
 		bankBalance[bankAddr] += msg.value;
 	}
 
 	function isBankOwner(address _caller) public view returns (bool){
-		if (bankBalance[_caller] == 0)
-			return false;
-		return true;
+		if (_caller == msg.sender)
+			return true;
+		return false;
 	}
 
 	function withdrawBankAccount() public payable isBankCreated{
+		require(bankBalance[msg.sender] != 0);
 		msg.sender.transfer(bankBalance[msg.sender]);
 		bankBalance[msg.sender] = 0;
 		delete bankBalance[msg.sender];
