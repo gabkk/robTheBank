@@ -1,12 +1,21 @@
 pragma solidity ^0.5.0;
 
 contract CoinFlip {
+
+    struct Bank {
+        string name;
+        uint256 balance;
+        bool isCreated;
+    }
+
 	address public owner;
 	int256 private maxInt = 57896044618658097711785492504343953926634992332820282019728792003956564819967;
 	int256 private minInt = maxInt + 1;
 	mapping (address => bool) lastFlip;
 	mapping (address => int256) userHistory;
-	mapping (address => uint256) bankBalance;
+	
+	mapping(address => Bank) Banks;
+	//mapping (address => uint256) bankBalance;
 	address[] public listOfBank;
 
 	constructor() public payable{
@@ -14,7 +23,9 @@ contract CoinFlip {
 
 		// Contract address
 		require(msg.value > 0);
-		bankBalance[msg.sender] = msg.value;
+		Banks[msg.sender].balance = msg.value;
+		Banks[msg.sender].name = "FED";
+		Banks[msg.sender].isCreated = true;
 		listOfBank.push(msg.sender);
 		lastFlip[msg.sender] = false;
 	}
@@ -25,15 +36,17 @@ contract CoinFlip {
 	}
 
 	modifier isBankCreated{
-		require(bankBalance[msg.sender] != 0, "Bank doesn't exist");
+		require(Banks[msg.sender].isCreated == true, "Bank doesn't exist");
 		_;
 	}
 
 	// add name to the bank Struct
-	function createBank() public payable{
-		require(bankBalance[msg.sender] == 0, "You can only own one bank");
+	function createBank(string memory _name) public payable{
+		require(Banks[msg.sender].isCreated == false, "You can only own one bank");
 		require(msg.value > 0);
-		bankBalance[msg.sender] = msg.value;
+		Banks[msg.sender].balance = msg.value;
+		Banks[msg.sender].isCreated = true;
+		Banks[msg.sender].name = _name;
 		listOfBank.push(msg.sender);
 	}
 
@@ -42,7 +55,7 @@ contract CoinFlip {
 	}
 
 	function getBankBalance(address _bankAddr) view public returns(uint256){
-		return bankBalance[_bankAddr];
+		return Banks[_bankAddr].balance;
 	}
 
 	// Get the balance of the user
@@ -80,7 +93,7 @@ contract CoinFlip {
 		require(msg.value > 0, "bet can't be 0");
 		
 		uint256 jackpotValue = msg.value * 2;
-		require(bankBalance[_bankAddr] >= jackpotValue, "bank balance should be greater than the jackpot");
+		require(Banks[_bankAddr].balance >= jackpotValue, "bank balance should be greater than the jackpot");
 
 		/*
 		*
@@ -95,12 +108,12 @@ contract CoinFlip {
 		uint randomResult = pseudoRandom();
 
 		if(randomResult % 2 == 0){
-			bankBalance[_bankAddr] -= msg.value;
+			Banks[_bankAddr].balance -= msg.value;
 			msg.sender.transfer(jackpotValue);
 			userHistory[msg.sender] += int256(msg.value);
 			lastFlip[msg.sender] = true;
 		} else {
-			bankBalance[_bankAddr] += msg.value;
+			Banks[_bankAddr].balance += msg.value;
 			userHistory[msg.sender] -= int256(msg.value);
 			lastFlip[msg.sender] = false;
 		}
@@ -108,20 +121,19 @@ contract CoinFlip {
 
 	function sendMoneyToTheBank(address bankAddr) public payable {
 		require(bankAddr == msg.sender);
-		bankBalance[bankAddr] += msg.value;
+		Banks[bankAddr].balance += msg.value;
 	}
 
-	function isBankOwner(address _caller) public view returns (bool){
-		if (_caller == msg.sender)
+	function isBankOwner() public view returns (bool){
+		if (Banks[msg.sender].isCreated == true)
 			return true;
 		return false;
 	}
 
 	function withdrawBankAccount() public payable isBankCreated{
-		require(bankBalance[msg.sender] != 0);
-		msg.sender.transfer(bankBalance[msg.sender]);
-		bankBalance[msg.sender] = 0;
-		delete bankBalance[msg.sender];
+		require(Banks[msg.sender].balance != 0);
+		msg.sender.transfer(Banks[msg.sender].balance);
+		Banks[msg.sender].balance = 0;
 	}
 
 	function destroyContract() public onlyOwner{
