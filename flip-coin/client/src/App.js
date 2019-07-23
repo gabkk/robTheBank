@@ -30,7 +30,7 @@ class App extends Component {
       lastFlip: "not play yet",
       listOfBank: null,
       displayWithraw: false,
-      isBankOwner: false,
+      isBankOwner: false
     }
     this.updateBankInfo = this.updateBankInfo.bind(this)
     this.setAmount = this.setAmount.bind(this);
@@ -81,8 +81,14 @@ class App extends Component {
       console.log("Is this account :" + accounts[0] + " owner of a bank : " + isBankOwner);
       // Add try catch here
       const initialAmount = await instance.methods.getBankBalance(listOfBank[0]).call();
-      let displayWithraw;
-      if(listOfBank[0] === accounts[0]){
+      
+      // TODO
+      //CHECK IF THE CURRENT ACCOUNT MATCH WITH THE BANK
+      
+      let displayWithraw = false;
+      console.log("value in the bank");
+      console.log(initialAmount);
+      if(listOfBank[0] === accounts[0] && initialAmount !== 0){
         displayWithraw = true;
       }
       console.log("initialAmount of bank owner " + initialAmount);
@@ -180,6 +186,7 @@ class App extends Component {
   sendMoney = async (dst) => {
     const { accounts, contract } = this.state;
     if (dst === "bank"){
+      console.log("this.state.sendFund");
       console.log(this.state.sendFund);
       try{
         await contract.methods.sendMoneyToTheBank(this.state.currentBank).send({from: accounts[0], value: parseInt(this.state.sendFund)});
@@ -192,36 +199,56 @@ class App extends Component {
       } catch (error){
         console.log("fail to get Bank balance");
       }
+      try {
+        await this.state.web3.eth.getBalance(accounts[0], (err, balance) => {
+          this.setState({ userFund: this.state.web3.utils.fromWei(balance)});
+        });
+      } catch (error){
+        console.log("fail to get User balance");
+      }
+      this.setState({displayWithraw: true});
     }
   };
 
   withdraw = async () => {
     const { accounts, contract } = this.state;
-    console.log("Inside withdraw");
-    console.log("accounts" + accounts[0]);
-    console.log("bank" + this.state.currentBank);
     try{
       await contract.methods.withdrawBankAccount().send({from: accounts[0]});
-
+      console.log("withdraw done");
     } catch(error){
       console.log("Failed to witdhraw from bank account" + error);
     }
     try {
       const response = await contract.methods.getBankBalance(this.state.currentBank).call();
       this.setState({ bankFund: response});
+      this.setState({displayWithraw: false});
+      console.log("get bank balance one");
+
     } catch (error){
       console.log("fail to get Bank balance");
+    }
+    try {
+      await this.state.web3.eth.getBalance(accounts[0], (err, balance) => {
+        this.setState({ userFund: this.state.web3.utils.fromWei(balance)});
+      });
+    } catch (error){
+      console.log("fail to get User balance");
     }
   };
 
   createNewBank = async(value) => {
     const { accounts, contract } = this.state;
     let listOfBank;
+    console.log("Inside createNewBank");
+    console.log("this.state.sendAmountToSendToTheBank");
+    console.log(this.state.sendAmountToSendToTheBank);
     try{
       await contract.methods.createBank().send({from: accounts[0], value: parseInt(this.state.sendAmountToSendToTheBank)});
     } catch(error){
-      console.log("Failed to witdhraw from bank account" + error);
+      console.log("Failed to create new bank account" + error);
     }
+    console.log("value of currentBank:");
+    console.log(this.state.currentBank);
     try {
       const response = await contract.methods.getBankBalance(this.state.currentBank).call();
       this.setState({ bankFund: response});
@@ -231,6 +258,7 @@ class App extends Component {
     try {
       listOfBank = await contract.methods.getListOfBank().call();
       this.setState({listOfBank: listOfBank});
+      this.setState({displayWithraw: true});
     } catch (error){
       console.log("list of bank empty");
     }
@@ -240,20 +268,27 @@ class App extends Component {
     const { contract , accounts} = this.state;
     let setBankIndex = event.target.value;
     let listOfBank, isBankOwner;
+    let balance_of_bank = 0;
+    console.log(" Inside updateBankinfo");
+    console.log("accounts[0]");
+    console.log(accounts[0]);
+    
     try {
       listOfBank = await contract.methods.getListOfBank().call();
       this.setState({listOfBank: listOfBank});
     } catch (error){
       console.log("list of bank empty");
     }
-    console.log("Current bank" + listOfBank[setBankIndex]);
+    console.log("Current bank type: " +typeof(listOfBank[setBankIndex]) + " , value:" + listOfBank[setBankIndex]);
     try {
-      const response = await contract.methods.getBankBalance(listOfBank[setBankIndex]).call();
-      this.setState({ bankFund: response,
+
+      balance_of_bank = await contract.methods.getBankBalance(listOfBank[setBankIndex]).call();
+      this.setState({ bankFund: balance_of_bank,
                       currentBank: listOfBank[setBankIndex]});
     } catch (error){
       console.log("fail to get Bank balance");
     }
+
     try {
       isBankOwner = await contract.methods.isBankOwner(accounts[0]).call();
       this.setState({isBankOwner: isBankOwner});
@@ -261,7 +296,7 @@ class App extends Component {
     } catch (error){
       console.log("isBankOwner failed");
     }
-    if(accounts[0] === listOfBank[setBankIndex]){
+    if(accounts[0] === listOfBank[setBankIndex] && balance_of_bank !== 0){
       this.setState({displayWithraw: true});
     }
   }
