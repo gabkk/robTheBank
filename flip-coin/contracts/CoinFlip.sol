@@ -9,8 +9,6 @@ contract CoinFlip {
     }
 
 	address public owner;
-	int256 private maxInt = 57896044618658097711785492504343953926634992332820282019728792003956564819967;
-	int256 private minInt = maxInt + 1;
 	mapping (address => bool) lastFlip;
 	mapping (address => int256) userHistory;
 	
@@ -89,20 +87,11 @@ contract CoinFlip {
 
 	function flip(address _bankAddr) payable public{
 		
-		require(0.5 ether > msg.value, "bet should be less than 0.5 eth");
+		require(1 ether > msg.value, "bet should be less than 1 eth");
 		require(msg.value > 0, "bet can't be 0");
 		
 		uint256 jackpotValue = msg.value * 2;
 		require(Banks[_bankAddr].balance >= jackpotValue, "bank balance should be greater than the jackpot");
-
-		/*
-		*
-		*	The value is too big regarding to the previous contract rules
-		*	and it will make fail the implicit cast for the player history
-		* 
-		*/
-		require(int256(jackpotValue) > minInt && int256(jackpotValue) < maxInt, "error in bet");
-
 
 		// Run the pseudorandom function
 		uint randomResult = pseudoRandom();
@@ -119,13 +108,12 @@ contract CoinFlip {
 		}
 	}
 
-	function sendMoneyToTheBank(address bankAddr) public payable {
-		require(bankAddr == msg.sender);
-		Banks[bankAddr].balance += msg.value;
+	function sendMoneyToTheBank() public payable {
+		Banks[msg.sender].balance += msg.value;
 	}
 
-	function isBankOwner() public view returns (bool){
-		if (Banks[msg.sender].isCreated == true)
+	function isBankOwner(address _myCall) public returns (bool){
+		if (Banks[_myCall].isCreated == true)
 			return true;
 		return false;
 	}

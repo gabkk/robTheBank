@@ -95,7 +95,7 @@ contract("CoinFlip", function(accounts){
 
   it("...[complex] Should send 5000 to the bank, the bank balance should be 'bank_value' + 5000", async () => {
     let amount_sent = 5000;
-    await CoinFlipInstance.sendMoneyToTheBank(wallet1, {value: amount_sent});
+    await CoinFlipInstance.sendMoneyToTheBank({from: wallet1, value: amount_sent});
     const value = await CoinFlipInstance.getBankBalance.call(wallet1);
     assert.equal(value, bank_value + amount_sent, "The value 15000 was not stored.");
   });

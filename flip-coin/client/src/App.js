@@ -40,6 +40,8 @@ class App extends Component {
   componentDidMount = async () => {
     try {
       // Get network provider and web3 instance.
+      console.log("Inside component did mount");
+
       const web3 = await getWeb3();
 
       // Use web3 to get the user's accounts.
@@ -189,7 +191,7 @@ class App extends Component {
       console.log("this.state.sendFund");
       console.log(this.state.sendFund);
       try{
-        await contract.methods.sendMoneyToTheBank(this.state.currentBank).send({from: accounts[0], value: parseInt(this.state.sendFund)});
+        await contract.methods.sendMoneyToTheBank().send({from: accounts[0], value: parseInt(this.state.sendFund)});
       } catch(error){
         console.log("send money to bank failed" + error);
       }
@@ -243,7 +245,7 @@ class App extends Component {
     console.log("this.state.sendAmountToSendToTheBank");
     console.log(this.state.sendAmountToSendToTheBank);
     try{
-      await contract.methods.createBank().send({from: accounts[0], value: parseInt(this.state.sendAmountToSendToTheBank)});
+      await contract.methods.createBank("Default").send({from: accounts[0], value: parseInt(this.state.sendAmountToSendToTheBank)});
     } catch(error){
       console.log("Failed to create new bank account" + error);
     }
