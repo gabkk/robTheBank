@@ -152,6 +152,13 @@ class App extends Component {
         } catch (error){
           console.log("fail to get Bank balance");
         }
+        try {
+          let isBankOwner = await this.state.contract.methods.isBankOwner(accounts[0]).call();
+          this.setState({isBankOwner: isBankOwner});
+          console.log("is bank owner " + isBankOwner);
+        } catch (error){
+          console.log("isBankOwner failed");
+        }
         if(accounts[0] === this.state.currentBank && balance_of_bank !== 0){
           this.setState({displayWithraw: true});
         } else {
@@ -374,13 +381,17 @@ class App extends Component {
         <div>Balance of your account: {this.state.userFund}</div>
         <div>History: {this.state.userHistory}</div>
         {!this.state.isBankOwner &&
-          <input type="text" name="valueToCreateBank" defaultValue='0' onChange={ this.setAmount }/>
+          <div>
+            <input type="text" name="valueToCreateBank" defaultValue='0' onChange={ this.setAmount }/>
+            <button type="button" onClick={this.createNewBank.bind(this)}> create new bank</button>
+          </div>
         }
-        {!this.state.isBankOwner &&
-          <button type="button" onClick={this.createNewBank.bind(this)}> create new bank</button>
-        }        
-        <input type="text" name="valueToSendToBank" defaultValue='0' onChange={ this.setAmount }/>
-        <button type="button" onClick={this.sendMoney.bind(this, "bank")}>Send money to the bank</button>
+        {this.state.isBankOwner &&
+          <div>
+            <input type="text" name="valueToSendToBank" defaultValue='0' onChange={ this.setAmount }/>
+            <button type="button" onClick={this.sendMoney.bind(this, "bank")}>Send money to the bank</button>
+          </div>
+        }
         <input type="text" name="valueToBet" defaultValue="0" onChange={ this.setAmount }/>
         <button type="button" onClick={this.flip.bind(this)}>Flip</button>
         <p> You have {this.state.lastFlip}</p>
