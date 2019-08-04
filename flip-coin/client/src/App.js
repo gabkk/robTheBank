@@ -14,6 +14,8 @@ class SelectBank extends React.Component{
     }
   }
 
+
+
 class App extends Component {
   constructor(props){
     super(props);
@@ -34,6 +36,7 @@ class App extends Component {
     }
     this.updateBankInfo = this.updateBankInfo.bind(this)
     this.setAmount = this.setAmount.bind(this);
+    this.updateInterface = this.updateInterface.bind(this);
   };
 
 
@@ -45,14 +48,13 @@ class App extends Component {
       const web3 = await getWeb3();
 
       // Use web3 to get the user's accounts.
-      const accounts = await web3.eth.getAccounts();
-      
+      let accounts = await web3.eth.getAccounts();
+
       // Show the contract balance
       let userAmount = 0;
       await web3.eth.getBalance(accounts[0], (err, balance) => {
         userAmount =  web3.utils.fromWei(balance) + " ETH";
       });
-
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = CoinFlip.networks[networkId];
@@ -112,12 +114,51 @@ class App extends Component {
       console.log(instance);
       console.log(networkId);
       console.log(deployedNetwork.address);
+
+      /*
+      * Loop To catch user wallet changes
+      */
+      let accountInterval = setInterval(async () => {
+        let newAccount = await web3.eth.getAccounts(); ;
+        if (newAccount[0] !== this.state.accounts[0]) {
+          this.updateInterface(newAccount);
+        }
+      }, 1000);
+
     } catch (error) {
       // Catch any errors for any of the above operations.
       console.log("Failed to load web3, accounts, or contract. Check console for details.");
       console.error(error);
     }
   };
+
+  updateInterface = async (accounts) =>{
+    let balance_of_bank = 0;;
+    /*
+    * Add a pop  up to show user change account
+    */
+    if(accounts[0] !== this.state.accounts[0]){
+        try{
+          let userAmount = 0;
+          let balance = await this.state.web3.eth.getBalance(accounts[0], (err, balance) => {
+            userAmount =  this.state.web3.utils.fromWei(balance) + " ETH";
+          });
+          this.setState({ userFund: userAmount, accounts: accounts});
+        } catch (error){
+          console.log("fail to get user balance"+error);
+        }
+        try {
+          balance_of_bank = await this.state.contract.methods.getBankBalance(accounts[0]).call();
+        } catch (error){
+          console.log("fail to get Bank balance");
+        }
+        if(accounts[0] === this.state.currentBank && balance_of_bank !== 0){
+          this.setState({displayWithraw: true});
+        } else {
+          this.setState({displayWithraw: false});
+        }
+    }
+  }
 
   runExample = async () => {
 
@@ -135,6 +176,7 @@ class App extends Component {
         console.log("fail to get balance");
     }
   };
+
 
   flip = async () => {
     const { accounts, contract } = this.state;
