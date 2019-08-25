@@ -109,11 +109,11 @@ contract CoinFlip {
 	}
 
 	function sendMoneyToTheBank() public payable {
-		require(Banks[msg.sender].isCreated == false, "You don't have a bank yet");
+		require(Banks[msg.sender].isCreated == true, "You don't have a bank yet");
 		Banks[msg.sender].balance += msg.value;
 	}
 
-	function isBankOwner(address _myCall) public returns (bool){
+	function isBankOwner(address _myCall) public view returns (bool){
 		if (Banks[_myCall].isCreated == true)
 			return true;
 		return false;
