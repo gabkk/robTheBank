@@ -1,4 +1,8 @@
 import React, { Component } from "react";
+import Navbar from 'react-bootstrap/Navbar';
+import Nav from 'react-bootstrap/Nav';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 import CoinFlip from "./contracts/CoinFlip.json";
 import getWeb3 from "./utils/getWeb3";
 
@@ -6,6 +10,7 @@ import Flip from "./components/Flip";
 import BankManagement from "./components/BankManagement";
 
 import "./App.css";
+import "./stylesheets/application.scss";
 
 class SelectBank extends React.Component{
     render(){
@@ -25,10 +30,13 @@ class App extends Component {
       web3: null,
       accounts: null,
       contract: null,
-      bankFund: 0,
+      selectedBankFund: 0,
+      selectedBankName: 'Default',
+      myBankFund: 0,
       userFund: 0,
       userHistory: 0,
       lastFlip: "not play yet",
+      myBankName: null,
       listOfBank: null,
       displayWithraw: false,
       isBankOwner: false
@@ -81,11 +89,12 @@ class App extends Component {
         console.log("isBankOwner failed");
       }
       console.log("Is this account :" + accounts[0] + " owner of a bank : " + isBankOwner);
+
       // Add try catch here
       const initialAmount = await instance.methods.getBankBalance(listOfBank[0]).call();
-      
-      // TODO
-      //CHECK IF THE CURRENT ACCOUNT MATCH WITH THE BANK
+      const selectedBankName = await instance.methods.getBankName(listOfBank[0]).call();
+      const myBankFund = await instance.methods.getBankBalance(accounts[0]).call();
+      const myBankName = await instance.methods.getBankName(accounts[0]).call();
       
       let displayWithraw = false;
       console.log("value in the bank");
@@ -102,7 +111,10 @@ class App extends Component {
       this.setState({ web3,
                       accounts,
                       contract: instance,
-                      bankFund: initialAmount,
+                      selectedBankFund: initialAmount,
+                      selectedBankName: selectedBankName,
+                      myBankFund: myBankFund,
+                      myBankName: myBankName,
                       userFund: userAmount,
                       userHistory: userHistory,
                       listOfBank: listOfBank,
@@ -130,8 +142,13 @@ class App extends Component {
     }
   };
 
+
+  /*
+  * Called when the user change metamask account
+  */
   updateInterface = async (accounts) =>{
-    let balance_of_bank = 0;;
+    let balanceOfBank = 0;
+    let nameOfBank = null;
     console.log("Inside updateInterface")
     console.log(accounts);
     /*
@@ -148,7 +165,14 @@ class App extends Component {
           console.log("fail to get user balance"+error);
         }
         try {
-          balance_of_bank = await this.state.contract.methods.getBankBalance(accounts[0]).call();
+          balanceOfBank = await this.state.contract.methods.getBankBalance(accounts[0]).call();
+          this.setState({ myBankFund: balanceOfBank});
+        } catch (error){
+          console.log("fail to get Bank balance");
+        }
+        try {
+          nameOfBank = await this.state.contract.methods.getBankName(accounts[0]).call();
+          this.setState({ myBankName: nameOfBank});
         } catch (error){
           console.log("fail to get Bank balance");
         }
@@ -159,7 +183,7 @@ class App extends Component {
         } catch (error){
           console.log("isBankOwner failed");
         }
-        if(accounts[0] === this.state.currentBank && balance_of_bank !== 0){
+        if(balanceOfBank !== "0"){
           this.setState({displayWithraw: true});
         } else {
           this.setState({displayWithraw: false});
@@ -177,18 +201,23 @@ class App extends Component {
       console.log(this.state.currentBank);
       const response = await contract.methods.getBankBalance(this.state.currentBank).call();
       // Update state with the result.
-      this.setState({ bankFund: response });
+      this.setState({ selectedBankFund: response });
       
     } catch (error){
         console.log("fail to get balance");
     }
   };
 
+  /*
+  * Called when the user change the selected bank
+  */
   updateBankInfo = async(event) => {
     const { contract , accounts} = this.state;
     let setBankIndex = event.target.value;
     let listOfBank, isBankOwner;
     let balance_of_bank = 0;
+    let myBankFund = 0;
+    let nameOfBank = "Default";
     console.log(" Inside updateBankinfo");
     console.log("accounts[0]");
     console.log(accounts[0]);
@@ -200,11 +229,26 @@ class App extends Component {
       console.log("list of bank empty");
     }
     console.log("Current bank type: " +typeof(listOfBank[setBankIndex]) + " , value:" + listOfBank[setBankIndex]);
-    try {
 
+    /*Set value for the selected bank*/
+    try {
       balance_of_bank = await contract.methods.getBankBalance(listOfBank[setBankIndex]).call();
-      this.setState({ bankFund: balance_of_bank,
+      this.setState({ selectedBankFund: balance_of_bank,
                       currentBank: listOfBank[setBankIndex]});
+    } catch (error){
+      console.log("fail to get Bank balance");
+    }
+
+    try {
+      nameOfBank = await contract.methods.getBankName(listOfBank[setBankIndex]).call();
+      this.setState({ selectedBankName: nameOfBank });
+    } catch (error){
+      console.log("fail to get Bank balance");
+    }
+
+    /*Check if the user bank is valid to display withdraw*/
+    try {
+      myBankFund = await contract.methods.getBankBalance(accounts[0]).call();
     } catch (error){
       console.log("fail to get Bank balance");
     }
@@ -216,7 +260,7 @@ class App extends Component {
     } catch (error){
       console.log("isBankOwner failed");
     }
-    if(accounts[0] === listOfBank[setBankIndex] && balance_of_bank !== 0){
+    if(myBankFund !== "0"){
       this.setState({displayWithraw: true});
     } else {
       this.setState({displayWithraw: false});
@@ -224,8 +268,8 @@ class App extends Component {
   }
 
   updateFromComponent(...newStateValue){
-    // console.log("updateFromComponent");
-    // console.log(newStateValue);
+    console.log("updateFromComponent");
+    console.log(newStateValue);
     this.setState(newStateValue[0]);
   }
 
@@ -234,29 +278,48 @@ class App extends Component {
       return <div>Please Install Metamask to be able to Play to this smart contract</div>;
     }
     return (
-      <div className="App">
-        <h1>Robe The Bank</h1>
-        <h2>Try to flip a coin</h2>
+      <div className="app">
+        <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
+          <Navbar.Brand href="#home">Robe The Bank</Navbar.Brand>
+          <Navbar.Toggle aria-controls="responsive-navbar-nav" />
+          <Navbar.Collapse id="responsive-navbar-nav">
+            <Nav className="mr-auto">
+              <Nav.Link href="#comingSoon">swarm version</Nav.Link>
+              <Nav.Link href="#info">Info</Nav.Link>
+            </Nav>
+            <Nav>
+              <Nav.Link>Balance of your wallet: {this.state.userFund}</Nav.Link>
+            </Nav>
+          </Navbar.Collapse>
+        </Navbar>
+        <div className="gameManagement">
+          <BankManagement accounts={this.state.accounts}
+                myBankFund={this.state.myBankFund}
+                contract={this.state.contract}
+                currentBank={this.state.currentBank}
+                web3={this.state.web3}
+                displayWithraw={this.state.displayWithraw}
+                isBankOwner={this.state.isBankOwner}
+                myBankName={this.state.myBankName}
+                updateFromComponent={this.updateFromComponent.bind(this)} />
 
-        <SelectBank items={this.state.listOfBank} value={this.state.activity} onSelect={this.updateBankInfo}/>
-        <div>Balance of the bank: {this.state.bankFund}</div>
+        </div>
 
-        <BankManagement accounts={this.state.accounts}
-              contract={this.state.contract}
-              currentBank={this.state.currentBank}
-              web3={this.state.web3}
-              displayWithraw={this.state.displayWithraw}
-              isBankOwner={this.state.isBankOwner}
-              updateFromComponent={this.updateFromComponent.bind(this)} />
+        <div className="bank">
+          <SelectBank items={this.state.listOfBank} value={this.state.activity} onSelect={this.updateBankInfo}/>
+          <div>Balance of the {this.state.selectedBankName} bank: {this.state.selectedBankFund}</div>
+        </div>
 
-        <div>Balance of your account: {this.state.userFund}</div>
-        <Flip accounts={this.state.accounts}
-              contract={this.state.contract}
-              currentBank={this.state.currentBank}
-              web3={this.state.web3}
-              updateFromComponent={this.updateFromComponent.bind(this)} />
-        <p> You have {this.state.lastFlip}</p>
-        <div>History: {this.state.userHistory}</div>
+
+        <div className="gameInteraction">
+          <Flip accounts={this.state.accounts}
+                contract={this.state.contract}
+                currentBank={this.state.currentBank}
+                web3={this.state.web3}
+                updateFromComponent={this.updateFromComponent.bind(this)} />
+          <p> You have {this.state.lastFlip}</p>
+          <div>History: {this.state.userHistory}</div>
+        </div>
       </div>
     );
   }

@@ -1,15 +1,19 @@
 import React, { Component } from "react";
+import FormControl from 'react-bootstrap/FormControl';
+import InputGroup from 'react-bootstrap/InputGroup';
+import Button from 'react-bootstrap/Button';
 
 class BankManagement extends Component{
-	constructor(props){
-		super(props);
-	    this.state = {
-	    	displayWithraw: false,
-	    	isBankOwner: false,
-	    	sendFund: null,
-	    	sendFundToNewBank: null,
-	    }
-	};
+    constructor(props){
+        super(props);
+        this.state = {
+            displayWithraw: false,
+            isBankOwner: false,
+            sendFund: null,
+            sendFundToNewBank: null,
+            nameToCreateBank: null,
+        }
+    };
 
   updateBalances = async (currentBank, account, web3, contract) => {
     let userFund = 0;
@@ -36,18 +40,26 @@ class BankManagement extends Component{
     } catch(error){
       console.log("BankManagement sendMoney: send money to bank failed" + error);
     }
+    /* The user is only able to send money to his own bank */
     try{
-      ret = await this.updateBalances.bind(this, currentBank, accounts[0], web3, contract)();
+      ret = await this.updateBalances.bind(this, accounts[0], accounts[0], web3, contract)();
     } catch (error){
       console.log("updateBalances failed:" + error);
     }
-    this.props.updateFromComponent({displayWithraw: true, userFund: ret.userFund, bankFund: ret.bankFund});
+    if (this.props.currentBank === accounts[0]){
+        this.props.updateFromComponent({displayWithraw: true,
+                                        userFund: ret.userFund,
+                                        myBankFund: ret.bankFund,
+                                        selectedBankFund: ret.bankFund});
+    } else {
+        this.props.updateFromComponent({displayWithraw: true,
+                                        userFund: ret.userFund,
+                                        myBankFund: ret.bankFund});
+    }
   };
 
   withdraw = async () => {
     const { accounts, contract, currentBank, web3 } = this.props;
-    console.log("widthraw currentBank");
-    console.log(currentBank);
     let ret;
     try{
       await contract.methods.withdrawBankAccount().send({from: accounts[0]});
@@ -59,15 +71,15 @@ class BankManagement extends Component{
     } catch (error){
       console.log("updateBalances failed:" + error);
     }
-    this.props.updateFromComponent({displayWithraw: false, userFund: ret.userFund, bankFund: ret.bankFund});
+    this.props.updateFromComponent({displayWithraw: false, userFund: ret.userFund, myBankFund: 0});
   };
 
   createNewBank = async(value) => {
-    const { accounts, contract } = this.state;
+    const { accounts, contract } = this.props;
     let listOfBank;
     let bankFund;
     try{
-      await contract.methods.createBank("Default").send({from: accounts[0], value: parseInt(this.state.sendFundToNewBank)});
+      await contract.methods.createBank(this.state.nameToCreateBank).send({from: accounts[0], value: parseInt(this.state.sendFundToNewBank)});
     } catch(error){
       console.log("BankManagement Failed to create new bank account" + error);
     }
@@ -81,7 +93,12 @@ class BankManagement extends Component{
     } catch (error){
       console.log("BankManagement createNewBank list of bank empty");
     }
-    this.props.updateFromComponent({displayWithraw: true, listOfBank: listOfBank, bankFund: bankFund});
+    this.props.updateFromComponent({displayWithraw: true,
+                                    listOfBank: listOfBank,
+                                    bankFund: bankFund,
+                                    myBankName: this.state.nameToCreateBank,
+                                    myBankFund: this.state.sendFundToNewBank,
+                                    isBankOwner: true});
   }
 
   setAmount = e => {
@@ -91,25 +108,64 @@ class BankManagement extends Component{
     } else if (e.target.name === "valueToCreateBank"){
       this.setState({ sendFundToNewBank: e.target.value });
     }
+    if (e.target.name === "nameToCreateBank"){
+      this.setState({ nameToCreateBank: e.target.value });
+    }
   };
 
   render(){
     return(
       <div>
-        {this.props.displayWithraw &&
-          <button type="button" onClick={this.withdraw.bind(this)}> Withraw</button>
-        }
+        <p>Bank {this.props.myBankName}</p>
+        <p> funds {this.props.myBankFund}</p>
         {this.props.isBankOwner ? (
           <div>
-            <input type="text" name="valueToSendToBank" defaultValue='0' onChange={ this.setAmount }/>
-            <button type="button" onClick={this.sendMoney.bind(this)}>Send money to the bank</button>
+          <InputGroup className="mb-3">
+            <FormControl
+              placeholder="0"
+              aria-label="0"
+              aria-describedby="basic-addon2"
+              type="text"
+              name="valueToSendToBank"
+              onChange={ this.setAmount }
+            />
+            <InputGroup.Append>
+              <Button type="button" variant="outline-secondary" onClick={this.sendMoney.bind(this)}>
+                Send money to the bank
+              </Button>
+            </InputGroup.Append>
+          </InputGroup>
           </div>
           ) : (
           <div>
-            <input type="text" name="valueToCreateBank" defaultValue='0' onChange={ this.setAmount }/>
-            <button type="button" onClick={this.createNewBank.bind(this)}> create new bank</button>
+            <InputGroup className="mb-3">
+            <FormControl
+              placeholder="default"
+              aria-label="default"
+              aria-describedby="basic-addon2"
+              type="text"
+              name="nameToCreateBank"
+              onChange={ this.setAmount }
+            />
+            <FormControl
+              placeholder="0"
+              aria-label="0"
+              aria-describedby="basic-addon2"
+              type="text"
+              name="valueToCreateBank"
+              onChange={ this.setAmount }
+            />
+            <InputGroup.Append>
+              <Button type="button" onClick={this.createNewBank.bind(this)} variant="outline-secondary">
+                create new bank
+              </Button>
+            </InputGroup.Append>
+            </InputGroup>
           </div>
           )
+        }
+        {this.props.displayWithraw &&
+          <Button type="button" onClick={this.withdraw.bind(this)} variant="success">Withraw</Button>
         }
       </div>
     )};
