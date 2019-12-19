@@ -12,8 +12,37 @@ class BankManagement extends Component{
             sendFund: null,
             sendFundToNewBank: null,
             nameToCreateBank: null,
+            myBankFund: this.props.myBankFund,
+            myBankName: this.props.myBankName
         }
     };
+  componentDidMount = async () => {
+    console.log("Bank management info :");
+    console.log(this.props);
+    console.log("DId mount i m bank owner")
+    // Loop To catch user wallet changes
+    this.timer = this.launchTimer();
+  };
+
+  // stopTimer = () => {
+  //   console.log("stoooop");
+  //   clearInterval(this.timer);
+  // };
+
+  launchTimer= () => {
+    this.timer = setInterval(async () => {
+        try{
+          let myBankObj = await this.props.contract.methods.getBankInfos(this.props.accounts[0]).call();
+          //console.log("Inside UPDATE INTERFACE");
+          //console.log(myBankObj);
+          this.setState({ myBankName: myBankObj[0],
+                          myBankFund: myBankObj[1],
+                          isBankOwner: myBankObj[2]});
+        } catch(error){
+          console.log("failed to getBankInfos of accounts[0] : " + error);
+        }
+      }, 1000);
+  }
 
   updateBalances = async (currentBank, account, web3, contract) => {
     let userFund = 0;
@@ -116,8 +145,8 @@ class BankManagement extends Component{
   render(){
     return(
       <div>
-        <p>Bank {this.props.myBankName}</p>
-        <p> funds {this.props.myBankFund}</p>
+        <p>Bank {this.state.myBankName}</p>
+        <p> funds {this.state.myBankFund}</p>
         {this.props.isBankOwner ? (
           <div>
           <InputGroup className="mb-3">

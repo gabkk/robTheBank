@@ -60,6 +60,11 @@ contract CoinFlip {
 		return Banks[_bankAddr].name;
 	}
 
+	function getBankInfos(address _bankAddr) view public returns(string memory, uint256, bool){
+		Bank memory p = Banks[_bankAddr];
+		return (p.name, p.balance, p.isCreated);
+	}
+
 	// Get the balance of the user
 	function getUserHistory(address player) view public returns(int256){
 		return userHistory[player];
