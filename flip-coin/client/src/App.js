@@ -93,6 +93,8 @@ class App extends Component {
       let selectedBankName = "Not set";
       try {
         let firstBankObj = await instance.methods.getBankInfos(listOfBank[0]).call();
+        console.log("firstBankObj");
+        console.log(firstBankObj);
         selectedBankName = firstBankObj[0];
         initialAmount = firstBankObj[1];
       } catch(error){
@@ -302,10 +304,13 @@ class App extends Component {
     console.log(newStateValue[0].bankFund);
     console.log("this.state.currentBank");
     console.log(this.state.currentBank);
+    console.log("this.state");
+    console.log(this.state);
+
     console.log("is bank owner " + this.state.isBankOwner);
-
-    this.setState({selectedBankFund: newStateValue[0].bankFund});
-
+    if (newStateValue[0].bankFund){
+      this.setState({selectedBankFund: newStateValue[0].bankFund});
+    }
     this.setState(newStateValue[0]);
   }
 
@@ -328,7 +333,7 @@ class App extends Component {
             </Nav>
           </Navbar.Collapse>
         </Navbar>
-        <div className="gameManagement">
+        <div className="bankManagement">
           <BankManagement accounts={this.state.accounts}
                 myBankFund={this.state.myBankFund}
                 contract={this.state.contract}
@@ -342,8 +347,13 @@ class App extends Component {
         </div>
 
         <div className="bank">
-          <SelectBank items={this.state.listOfBank} value={this.state.activity} onSelect={this.updateBankInfo}/>
-          <div>Balance of the {this.state.selectedBankName} bank: {this.state.selectedBankFund}</div>
+          <SelectBank items={this.state.listOfBank}
+                      value={this.state.activity}
+                      onSelect={this.updateBankInfo}
+          />
+          <div> Balance of the bank {this.state.selectedBankName}
+                : {this.state.selectedBankFund}
+          </div>
         </div>
 
 

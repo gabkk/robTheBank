@@ -109,25 +109,25 @@ class BankManagement extends Component{
     let bankFund;
     try{
       await contract.methods.createBank(this.state.nameToCreateBank).send({from: accounts[0], value: parseInt(this.state.sendFundToNewBank)});
+      try {
+        bankFund = await contract.methods.getBankBalance(this.state.currentBank).call();
+      } catch (error){
+        console.log("BankManagement createNewBank fail to get Bank balance");
+      }
+      try {
+        listOfBank = await contract.methods.getListOfBank().call();
+      } catch (error){
+        console.log("BankManagement createNewBank list of bank empty");
+      }
+      this.props.updateFromComponent({displayWithraw: true,
+                                      listOfBank: listOfBank,
+                                      bankFund: bankFund,
+                                      myBankName: this.state.nameToCreateBank,
+                                      myBankFund: this.state.sendFundToNewBank,
+                                      isBankOwner: true});
     } catch(error){
       console.log("BankManagement Failed to create new bank account" + error);
     }
-    try {
-      bankFund = await contract.methods.getBankBalance(this.state.currentBank).call();
-    } catch (error){
-      console.log("BankManagement createNewBank fail to get Bank balance");
-    }
-    try {
-      listOfBank = await contract.methods.getListOfBank().call();
-    } catch (error){
-      console.log("BankManagement createNewBank list of bank empty");
-    }
-    this.props.updateFromComponent({displayWithraw: true,
-                                    listOfBank: listOfBank,
-                                    bankFund: bankFund,
-                                    myBankName: this.state.nameToCreateBank,
-                                    myBankFund: this.state.sendFundToNewBank,
-                                    isBankOwner: true});
   }
 
   setAmount = e => {
@@ -144,12 +144,18 @@ class BankManagement extends Component{
 
   render(){
     return(
-      <div>
-        <p>Bank {this.state.myBankName}</p>
-        <p> funds {this.state.myBankFund}</p>
+      <div className="ManagementContainer">
         {this.props.isBankOwner ? (
           <div>
           <InputGroup className="mb-3">
+            {this.props.displayWithraw &&
+            <Button type="button" className="success" onClick={this.withdraw.bind(this)} variant="success">Withraw</Button>
+            }
+            <div className="ManagementBankInfo">
+              <p>Bank {this.state.myBankName}</p>
+              <p> funds {this.state.myBankFund}</p>
+            </div>
+            
             <FormControl
               placeholder="0"
               aria-label="0"
@@ -168,14 +174,7 @@ class BankManagement extends Component{
           ) : (
           <div>
             <InputGroup className="mb-3">
-            <FormControl
-              placeholder="default"
-              aria-label="default"
-              aria-describedby="basic-addon2"
-              type="text"
-              name="nameToCreateBank"
-              onChange={ this.setAmount }
-            />
+            <p className="first-input">Value</p>
             <FormControl
               placeholder="0"
               aria-label="0"
@@ -184,17 +183,23 @@ class BankManagement extends Component{
               name="valueToCreateBank"
               onChange={ this.setAmount }
             />
+            <p className="second-input">bank name</p>
+            <FormControl
+              placeholder="default"
+              aria-label="default"
+              aria-describedby="basic-addon2"
+              type="text"
+              name="nameToCreateBank"
+              onChange={ this.setAmount }
+            />
             <InputGroup.Append>
-              <Button type="button" onClick={this.createNewBank.bind(this)} variant="outline-secondary">
+              <Button type="button" className="NewBankButton" onClick={this.createNewBank.bind(this)} variant="outline-secondary">
                 create new bank
               </Button>
             </InputGroup.Append>
             </InputGroup>
           </div>
           )
-        }
-        {this.props.displayWithraw &&
-          <Button type="button" onClick={this.withdraw.bind(this)} variant="success">Withraw</Button>
         }
       </div>
     )};
