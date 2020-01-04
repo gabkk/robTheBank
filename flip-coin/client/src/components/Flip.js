@@ -11,26 +11,20 @@ class Flip extends React.Component{
       let bankBalance = 0;
       let userBalance = 0;
       let userHistory = 0;
-      let gameStatus = "not play yet";
+      var gameStatus = "not play yet";
       try {
-        await contract.methods.flip(currentBank).send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 900000});
+        var responseFlip = await contract.methods.flip(currentBank).send({ from: accounts[0], value: parseInt(this.state.sendAmountToBet), gas: 70000});
+        if (responseFlip.events.ReturnValue.returnValues[0] === true){
+          gameStatus = "Win";
+        }
+        else {
+          gameStatus = "Loose";
+        }
         try {
           userHistory = await contract.methods.getUserHistory(accounts[0]).call();
           console.log("this is user historic" + userHistory);
         } catch (error){
           console.log("fail to get User balance");
-        }
-        try {
-          const responseFlip = await contract.methods.getLastFlip(accounts[0]).call();
-          // Update state with the result.
-          if (responseFlip === true){
-            gameStatus = "Win";
-          }
-          else {
-            gameStatus = "Loose";
-          }
-        } catch (error){
-            console.log("fail to get last flip");
         }
         try {
           bankBalance = await contract.methods.getBankBalance(currentBank).call();
@@ -44,9 +38,12 @@ class Flip extends React.Component{
           console.log("fail to get user balance");
         }
         /*
-		* Send the result of the new state to the parent component
+		    * Send the result of the new state to the parent component
         */
-        this.props.updateFromComponent({userFund: userBalance, lastFlip: gameStatus, userHistory: userHistory, bankFund: bankBalance});
+        this.props.updateFromComponent({userFund: userBalance,
+                                        lastFlip: gameStatus,
+                                        userHistory: userHistory,
+                                        bankFund: bankBalance});
       } catch (error){
         console.log("error When fliping"+ error);
       }
