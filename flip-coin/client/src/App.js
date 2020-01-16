@@ -15,10 +15,18 @@ import "./App.css";
 import "./stylesheets/application.scss";
 
 class SelectBank extends React.Component{
+  componentDidMount(props){
+    console.log("this.props");
+    console.log(this.props);
+  }
+
     render(){
       return (
-      <select value={this.props.value} name={this.props.name} onChange={this.props.onSelect}> {this.props.items.map((item,index) =>{
-          return <option key={item} value={index}>{item}</option>})}
+      <select value={this.props.value}
+              name= {this.props.name}
+              onChange={this.props.onSelect}>
+          {this.props.items.map((subItem,index) =>{
+          return <option key={subItem.obj.address} value={index}>{subItem.obj.name} {subItem.obj.balance}ETH {subItem.obj.address}</option>})}
       </select>
       )
     }
@@ -41,7 +49,8 @@ class App extends Component {
       myBankName: null,
       listOfBank: null,
       displayWithraw: false,
-      isBankOwner: false
+      isBankOwner: false,
+      listOfBankObj: []
     }
     this.updateBankInfo = this.updateBankInfo.bind(this)
     this.updateInterface = this.updateInterface.bind(this);
@@ -51,11 +60,14 @@ class App extends Component {
     try {
 
       // Get network provider and web3 instance.
-      console.log("Inside component did mount");
       const web3 = await getWeb3();
-
-      // Use web3 to get the user's accounts.
-      let accounts = await web3.eth.getAccounts();
+      let accounts;
+      try{
+        // Use web3 to get the user's accounts.
+        accounts = await web3.eth.getAccounts();
+      } catch {
+        console.log("accounts error");
+      }
 
       // Show the contract balance
       let userAmount = 0;
@@ -71,16 +83,12 @@ class App extends Component {
       );
 
       let listOfBank;
-
       try {
         listOfBank = await instance.methods.getListOfBank().call();
-        console.log("listOfBank");
-        console.log(listOfBank);
         this.setState({listOfBank: listOfBank});
       } catch (error){
-        console.log("list of bank empty");
+        console.log("Get list of bank OBJ failed");
       }
-
       /*
       * bankObj
       * [0] = name (str)
@@ -93,8 +101,6 @@ class App extends Component {
       let selectedBankName = "Not set";
       try {
         let firstBankObj = await instance.methods.getBankInfos(listOfBank[0]).call();
-        console.log("firstBankObj");
-        console.log(firstBankObj);
         selectedBankName = firstBankObj[0];
         initialAmount = firstBankObj[1];
       } catch(error){
@@ -118,10 +124,37 @@ class App extends Component {
       }
       
       let displayWithraw = false;
-      console.log("value in the bank");
-      console.log(initialAmount);
       if(listOfBank && listOfBank[0] === accounts[0] && initialAmount !== 0){
         displayWithraw = true;
+      }
+
+      // WIP Retreive all the bank event to get name and Balance
+      try {
+        await instance.methods.getListOfBankObj().call();
+        try {
+          //TODO Improve this !!!!!!!!
+          await instance.getPastEvents(['LogListOfBank'], {fromBlock: 0, toBlock: 'latest'},
+            async (err, events) => {
+              var listOfBankObj = [];
+              for(let i=0; i<events.length;i++){
+                var obj={};
+                obj.name = events[i].returnValues.name;
+                obj.address = events[i].returnValues.addr;
+                obj.balance = events[i].returnValues.balance;
+                listOfBankObj = listOfBankObj.concat({obj});
+              }
+              this.setState(state => {
+                return {
+                  listOfBankObj
+                };
+              });
+            }
+          )
+        } catch (error){
+          console.log("No past event in getListOfBank");
+        }
+      } catch (error){
+        console.log("Get list of bank OBJ failed");
       }
 
       const userHistory = await instance.methods.getUserHistory(accounts[0]).call();
@@ -140,10 +173,6 @@ class App extends Component {
                       displayWithraw: displayWithraw,
                       currentBank: listOfBank[0],
                     }, this.runExample);
-      console.log(instance);
-      console.log(networkId);
-      console.log(deployedNetwork.address);
-
       // Loop To catch user wallet changes
       setInterval(async () => {
         let newAccount = await web3.eth.getAccounts(); ;
@@ -159,30 +188,7 @@ class App extends Component {
     }
   };
 
-
-  /*
-  * Called when the user change metamask account
-
-    componentDidMount() {
-    this.timer = this.launchTimer();
-  }
-
-  stopTimer = () => {
-    console.log("stoooop");
-    clearInterval(this.timer);
-  };
-
-  launchTimer = () => {
-    this.timer = setInterval(() => (axios.get("http://127.0.0.1:8000?count=20")
-      .then(data => this.setState({ data: data.data }))
-      .catch(error => console.log(error))), 1000);
-  };
-
-
-  */
   updateInterface = async (accounts) =>{
-    console.log("Inside updateInterface")
-    console.log(accounts);
     /*
     * Add a pop  up to show user change account
     */
@@ -203,8 +209,6 @@ class App extends Component {
       } catch(error){
         console.log("failed to get isBankOwner accounts[0] : " + error);
       }
-      console.log("Is bank owner");
-      console.log(isBankOwner);
       this.setState({isBankOwner: isBankOwner})
       if(isBankOwner){
         this.setState({displayWithraw: true});
@@ -213,7 +217,6 @@ class App extends Component {
       }
       try {
         let userHistory = await this.state.contract.methods.getUserHistory(accounts[0]).call();
-        console.log("this is user historic" + userHistory);
         this.setState({userHistory: userHistory});
       } catch (error){
         console.log("fail to get User balance");
@@ -227,9 +230,6 @@ class App extends Component {
     try {
 
       // // Get the value from the contract to prove it worked.
-      console.log("Inside run Exqmple");
-      console.log(this.state.currentBank);
-      console.log(this.state.listOfBank);
       const response = await contract.methods.getBankBalance(this.state.currentBank).call();
       // Update state with the result.
       this.setState({ selectedBankFund: response });
@@ -249,10 +249,6 @@ class App extends Component {
     let balance_of_bank = 0;
     let myBankFund = 0;
     let nameOfBank = "Default";
-    console.log(" Inside updateBankinfo");
-    console.log("accounts[0]");
-    console.log(accounts[0]);
-    
     try {
       listOfBank = await contract.methods.getListOfBank().call();
       this.setState({listOfBank: listOfBank});
@@ -287,7 +283,6 @@ class App extends Component {
     try {
       isBankOwner = await contract.methods.isBankOwner(accounts[0]).call();
       this.setState({isBankOwner: isBankOwner});
-      console.log("is bank owner " + isBankOwner);
     } catch (error){
       console.log("isBankOwner failed");
     }
@@ -299,15 +294,6 @@ class App extends Component {
   }
 
   updateFromComponent(...newStateValue){
-    console.log("updateFromComponent");
-    console.log(newStateValue);
-    console.log(newStateValue[0].bankFund);
-    console.log("this.state.currentBank");
-    console.log(this.state.currentBank);
-    console.log("this.state");
-    console.log(this.state);
-
-    console.log("is bank owner " + this.state.isBankOwner);
     if (newStateValue[0].bankFund){
       this.setState({selectedBankFund: newStateValue[0].bankFund});
     }
@@ -342,12 +328,13 @@ class App extends Component {
                 displayWithraw={this.state.displayWithraw}
                 isBankOwner={this.state.isBankOwner}
                 myBankName={this.state.myBankName}
+                listOfBankObj={this.state.listOfBankObj}
                 updateFromComponent={this.updateFromComponent.bind(this)} />
 
         </div>
-
+        {this.state.listOfBankObj ? (
         <div className="bank">
-          <SelectBank items={this.state.listOfBank}
+          <SelectBank items={this.state.listOfBankObj}
                       value={this.state.activity}
                       onSelect={this.updateBankInfo}
           />
@@ -355,6 +342,10 @@ class App extends Component {
                 : {this.state.selectedBankFund}
           </div>
         </div>
+        ):(
+        <div>
+        </div>
+        )}
 
 
         <div className="gameInteraction">

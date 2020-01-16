@@ -13,7 +13,8 @@ class BankManagement extends Component{
             sendFundToNewBank: null,
             nameToCreateBank: null,
             myBankFund: this.props.myBankFund,
-            myBankName: this.props.myBankName
+            myBankName: this.props.myBankName,
+            listOfBankObj: this.props.listOfBankObj
         }
     };
   componentDidMount = async () => {
@@ -75,7 +76,7 @@ class BankManagement extends Component{
     } catch (error){
       console.log("updateBalances failed:" + error);
     }
-    if (this.props.currentBank === accounts[0]){
+    if (currentBank === accounts[0]){
         this.props.updateFromComponent({displayWithraw: true,
                                         userFund: ret.userFund,
                                         myBankFund: ret.bankFund,
@@ -119,12 +120,43 @@ class BankManagement extends Component{
       } catch (error){
         console.log("BankManagement createNewBank list of bank empty");
       }
+      // WIP Retreive all the bank event to get name and Balance
+      try {
+        await contract.methods.getListOfBankObj().call();
+        try {
+          //TODO Improve this !!!!!!!!
+          await contract.getPastEvents(['LogListOfBank'], {fromBlock: 'latest', toBlock: 'latest'},
+            async (err, events) => {
+              console.log("BANK MANAGEMENT events[events.length-1].returnValues");
+              console.log(events);
+              this.setState(state => {
+                var obj={};
+                obj.name = events[events.length-1].returnValues.name;
+                obj.address = events[events.length-1].returnValues.addr;
+                obj.balance = events[events.length-1].returnValues.balance;
+                const listOfBankObj = state.listOfBankObj.concat({obj});
+                console.log("BANK MANAGEMENT New bank oject !!!!!!");
+                console.log(listOfBankObj);
+
+                return {
+                  listOfBankObj
+                };
+              });
+            }
+          )
+        } catch (error){
+          console.log("No past event in getListOfBank");
+        }
+      } catch (error){
+        console.log("Get list of bank OBJ failed");
+      }
       this.props.updateFromComponent({displayWithraw: true,
                                       listOfBank: listOfBank,
                                       bankFund: bankFund,
                                       myBankName: this.state.nameToCreateBank,
                                       myBankFund: this.state.sendFundToNewBank,
-                                      isBankOwner: true});
+                                      isBankOwner: true,
+                                      listOfBankObj: this.state.listOfBankObj});
     } catch(error){
       console.log("BankManagement Failed to create new bank account" + error);
     }

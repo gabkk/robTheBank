@@ -60,7 +60,7 @@ class Flip extends React.Component{
   	return(
   		<div>
 	        <input type="text" name="value" defaultValue="0" onChange={ this.setAmount }/>
-  			<button type="button" onClick={this.flip.bind(this)}>Flip</button>
+  			<button type="button" onClick={this.flip.bind(this)}>Rob It !</button>
   		</div>
   	);
   }
