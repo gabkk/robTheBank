@@ -1,3 +1,12 @@
 flip-coin/client/src/contracts/CoinFlip.json
 flip-coin/client/src/contracts/Migrations.json
+flip-coin/truffle-config.js
+flip-coin/.truffle-config.js.swp
+flip-coin/.secret
+flip-coin/.secret*
+flip-coin/client/.secret
+flip-coin/client/.secret*
+node_modules/
+flip-coin/node_modules/
+package-lock.json
 README_LOCAL_GANACHE.txt
