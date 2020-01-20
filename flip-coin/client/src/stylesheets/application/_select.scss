@@ -1,0 +1,234 @@
+// Demo Colors
+$demo-blue: #222529;
+$demo-gray: #1a1a1a;
+$demo-placeholder: #C7C7C7;
+$demo-border: #E6E6E6;
+
+$border-width: 3px;
+.selectContainer{
+  width: 80%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@mixin _select-form-reset() {
+  display: block;
+  padding: 0;
+  position: relative;
+
+  &::before,
+  &::after {
+    content: '';
+    display: block;
+    position: absolute;
+    pointer-events: none; // Arrow clickable in some browsers
+    z-index: 2;
+  }
+
+  // This is the native select, we're making everything but the text invisible so we can see the button styles in the wrapper
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    border: 1px solid transparent;
+    font-size: 16px; // Font size must the 16px or larger to prevent iOS page zoom on focus
+    outline: none;
+
+    /* Focus style */
+    &:focus {
+      background-color: transparent;
+      outline: none;
+    }
+  }
+
+  /* Set options to normal weight */
+  option {
+    font-weight: normal;
+  }
+
+  /* ------------------------------------  */
+  /* START OF UGLY BROWSER-SPECIFIC HACKS */
+  /* ----------------------------------  */
+
+  // Targeted via this hack http://browserhacks.com/#hack-a3f166304aafed524566bc6814e1d5c7
+  x:-o-prefocus, &::after {
+    display: none;
+  }
+  // IE 10/11+ - This hides native dropdown button arrow so it will have the custom appearance,
+  // IE 9 and earlier get a native select - targeting media query hack via http://browserhacks.com/#hack-28f493d247a12ab654f6c3637f6978d5 - looking for better ways to achieve this targeting
+  // The second rule removes the odd blue bg color behind the text in the select button in IE 10/11 and sets the text color to match the focus style's - fix via http://stackoverflow.com/questions/17553300/change-ie-background-color-on-unopened-focused-select-box */
+  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    & {
+      select {
+        &::-ms-expand {
+          display: none;
+        }
+
+        &:focus::-ms-value {
+          background: transparent;
+          color: #000;
+        }
+
+      }
+    }
+  }
+
+  /* FIREFOX won't let us hide the native select arrow, so we have to make it wider than needed and clip it via overflow on the parent container.
+     The percentage width is a fallback since FF 4+ supports calc() so we can just add a fixed amount of extra width to push the native arrow out of view. We're applying this hack across all FF versions because all the previous hacks were too fragile and complex.
+     You might want to consider not using this hack and using the native select arrow in FF. Note this makes the menus wider than the select button because they display at the specified width and aren't clipped. Targeting hack via http://browserhacks.com/#hack-758bff81c5c32351b02e10480b5ed48e */
+  /* Show only the native arrow */
+  @-moz-document url-prefix() {
+    & {
+      overflow: hidden;
+
+      select {
+        width: 120%;
+        width: -moz-calc(100% + 3em);
+        width: calc(100% + 3em);
+        
+        @supports(-moz-appearance: none) {
+          width: 100%;          
+        }
+        
+
+        /* Firefox focus has odd artifacts around the text, this kills that. See https://developer.mozilla.org/en-US/docs/Web/CSS/:-moz-focusring */
+        &:-moz-focusring {
+          color: transparent;
+          text-shadow: 0 0 0 #000;
+        }
+      }
+    }
+  }
+  
+  @supports( -moz-appearance: none ) {
+    & {
+      width: 100%;          
+    }
+  }
+
+}
+
+
+
+//=======================================================================//
+
+// Select function
+@mixin form-input-select(){
+  // see https://codepen.io/jnowland/pen/KzYQxp for reset function
+  @include _select-form-reset; 
+  color: $demo-blue;
+  display: block;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 16px;
+  // padding: 11px 15px;
+  margin-top: 9px;
+  margin-bottom: 15px;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    display: block;
+    position: absolute;
+    pointer-events: none; // Arrow clickable in some browsers
+
+    // triangle set up
+    border: 1px solid transparent; // reset all borders
+    width: 0;
+    height: 0;
+    right: 16px;
+  }
+
+  // top arrow
+  &::before {
+    bottom: 55%;
+    border-width: 0 6.5px 8px 6.5px;
+    border-bottom-color: $demo-gray;
+  }
+
+  // bottom arrow
+  &::after {
+    border-width: 8px 6.5px 0 6.5px;
+    border-top-color: $demo-gray;
+    top: 55%;
+  }
+  
+  // firefox is outside the div
+  @-moz-document url-prefix() {
+    border-right: $border-width solid $demo-border;
+    
+    &:hover {
+      border-right: $border-width solid $demo-blue;
+    }
+  }
+
+  &:hover {
+
+    select {
+      box-shadow: 0 2px 3px rgba($demo-blue, 0.1) inset;
+      border-color: $demo-blue;
+
+      // outline is critical but when we are hovering the div has the border already.
+      &:focus {
+        outline-color: transparent;
+      }
+      
+    }
+
+    &::before {
+      border-bottom-color: $demo-blue;
+    }
+    &::after {
+      border-top-color: $demo-blue;
+    }
+
+  }
+
+  // Make sure you set all padding, borders on this select and not the parent div.
+  // this is mainly for :focus and tabbing.
+
+  select {
+    border: $border-width solid $demo-border;
+    border-radius: 0;
+    font-weight: 400;
+    color: inherit;
+    padding: 11px 15px;
+    line-height: normal;
+    transition: border-color 0.2s ease,
+                outline 0.2s ease;
+
+
+    // we really need this for the tabbers
+    // causes double borders though
+    &:focus {
+      box-shadow: 0 3px 4px rgba($demo-blue, 0.3) inset;
+      // outline is critical for usability
+      outline: $border-width solid $demo-blue;
+      outline-offset: -#{$border-width}; //offset vs width
+    }
+
+    &[disabled], &:disabled{
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    // we use invalid like a placeholder
+    // 2019-03-05 added not selector for firefox and ie
+    &:not(:focus):invalid {
+      color: $demo-placeholder;
+    }
+
+  }
+}
+
+// Show the function
+[include*="form-input-select()"] {
+  @include form-input-select();
+}
+
+

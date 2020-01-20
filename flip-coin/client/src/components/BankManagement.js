@@ -16,13 +16,14 @@ class BankManagement extends Component{
             myBankName: this.props.myBankName,
             listOfBankObj: this.props.listOfBankObj
         }
-    };
-  componentDidMount = async () => {
-    console.log("Bank management info :");
     console.log(this.props);
-    console.log("DId mount i m bank owner")
+    };
+
+  componentDidMount = async () => {
     // Loop To catch user wallet changes
-    this.timer = this.launchTimer();
+    if(this.props.accounts){
+      this.timer = this.launchTimer();
+    }
   };
 
   // stopTimer = () => {
@@ -135,9 +136,6 @@ class BankManagement extends Component{
                 obj.address = events[events.length-1].returnValues.addr;
                 obj.balance = events[events.length-1].returnValues.balance;
                 const listOfBankObj = state.listOfBankObj.concat({obj});
-                console.log("BANK MANAGEMENT New bank oject !!!!!!");
-                console.log(listOfBankObj);
-
                 return {
                   listOfBankObj
                 };
@@ -222,6 +220,7 @@ class BankManagement extends Component{
               aria-describedby="basic-addon2"
               type="text"
               name="nameToCreateBank"
+              maxlength="20"
               onChange={ this.setAmount }
             />
             <InputGroup.Append>

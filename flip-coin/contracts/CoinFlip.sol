@@ -49,6 +49,7 @@ contract CoinFlip{
 	// add name to the bank Struct
 	function createBank(string memory _name) public payable{
 		require(Banks[msg.sender].isCreated == false, "You can only own one bank");
+		require(bytes(_name).length < 21);
 		require(msg.value > 0);
 		Banks[msg.sender].balance = msg.value;
 		Banks[msg.sender].isCreated = true;

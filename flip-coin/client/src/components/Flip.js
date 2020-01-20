@@ -51,18 +51,19 @@ class Flip extends React.Component{
   };
 
   setAmount = e => {
-	if (e.target.name === "value"){
+  if (e.target.name === "value"){
       this.setState({ sendAmountToBet: e.target.value });
     }
   };
 
   render(){
-  	return(
-  		<div>
-	        <input type="text" name="value" defaultValue="0" onChange={ this.setAmount }/>
-  			<button type="button" onClick={this.flip.bind(this)}>Rob It !</button>
-  		</div>
-  	);
+    return(
+      <div className="actionRob">
+        <p>Enter the value you want to rob (or loose)</p>
+        <input type="text" name="value" defaultValue="0" onChange={ this.setAmount }/>
+        <button type="button" id="robItButton" onClick={this.flip.bind(this)}>Rob It !</button>
+      </div>
+    );
   }
 }
 

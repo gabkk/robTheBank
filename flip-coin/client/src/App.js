@@ -9,28 +9,15 @@ import CoinFlip from "./contracts/CoinFlip.json";
 import getWeb3 from "./utils/getWeb3";
 
 import Flip from "./components/Flip";
+import AppNotConnected from "./components/AppNotConnected";
 import BankManagement from "./components/BankManagement";
+import SelectBank from "./utils/SelectBank"
 
 import "./App.css";
 import "./stylesheets/application.scss";
+import image_gangster from "./images/gangster.jpg";
+import image_bank from "./images/image_bank.png";
 
-class SelectBank extends React.Component{
-  componentDidMount(props){
-    console.log("this.props");
-    console.log(this.props);
-  }
-
-    render(){
-      return (
-      <select value={this.props.value}
-              name= {this.props.name}
-              onChange={this.props.onSelect}>
-          {this.props.items.map((subItem,index) =>{
-          return <option key={subItem.obj.address} value={index}>{subItem.obj.name} {subItem.obj.balance}ETH {subItem.obj.address}</option>})}
-      </select>
-      )
-    }
-  }
 
 class App extends Component {
   constructor(props){
@@ -69,117 +56,120 @@ class App extends Component {
         console.log("accounts error");
       }
 
-      // Show the contract balance
-      let userAmount = 0;
-      await web3.eth.getBalance(accounts[0], (err, balance) => {
-        userAmount =  web3.utils.fromWei(balance) + " ETH";
-      });
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = CoinFlip.networks[networkId];
-      const instance = new web3.eth.Contract(
-        CoinFlip.abi,
-        deployedNetwork && deployedNetwork.address
-      );
+        const instance = new web3.eth.Contract(
+          CoinFlip.abi,
+          deployedNetwork && deployedNetwork.address
+        );
 
+        // Show the contract balance
+        let userAmount = 0;
+        await web3.eth.getBalance(accounts[0], (err, balance) => {
+          userAmount =  web3.utils.fromWei(balance) + " ETH";
+        });
       let listOfBank;
-      try {
+      try {
         listOfBank = await instance.methods.getListOfBank().call();
         this.setState({listOfBank: listOfBank});
-      } catch (error){
-        console.log("Get list of bank OBJ failed");
-      }
-      /*
-      * bankObj
-      * [0] = name (str)
-      * [1] = amount of eth (str)
-      * [2] isCreated (bool)
-      */
+        /*
+        * bankObj
+        * [0] = name (str)
+        * [1] = amount of eth (str)
+        * [2] isCreated (bool)
+        */
 
-      /* Get infos related to the first bank*/
-      let initialAmount = 0;
-      let selectedBankName = "Not set";
-      try {
-        let firstBankObj = await instance.methods.getBankInfos(listOfBank[0]).call();
-        selectedBankName = firstBankObj[0];
-        initialAmount = firstBankObj[1];
-      } catch(error){
-        console.log("failed to getBankInfos of listOfBank[0] : " + error);
-      }      
-
-      /* Get infos related to the accounts bank if there is one*/
-      let myBankFund = 0;
-      let myBankName = "Not set";
-      let isBankOwner = false;
-      try{
-        let myBankObj = await instance.methods.getBankInfos(accounts[0]).call();
-        myBankName = myBankObj[0];
-        myBankFund = myBankObj[1];
-        isBankOwner = myBankObj[2];
-        this.setState({isBankOwner: isBankOwner,
-                        myBankFund: myBankFund,
-                        myBankName: myBankName});
-      } catch(error){
-        console.log("failed to getBankInfos of accounts[0] : " + error);
-      }
-      
-      let displayWithraw = false;
-      if(listOfBank && listOfBank[0] === accounts[0] && initialAmount !== 0){
-        displayWithraw = true;
-      }
-
-      // WIP Retreive all the bank event to get name and Balance
-      try {
-        await instance.methods.getListOfBankObj().call();
+        /* Get infos related to the first bank*/
+        let initialAmount = 0;
+        let selectedBankName = "Not set";
         try {
-          //TODO Improve this !!!!!!!!
-          await instance.getPastEvents(['LogListOfBank'], {fromBlock: 0, toBlock: 'latest'},
-            async (err, events) => {
-              var listOfBankObj = [];
-              for(let i=0; i<events.length;i++){
-                var obj={};
-                obj.name = events[i].returnValues.name;
-                obj.address = events[i].returnValues.addr;
-                obj.balance = events[i].returnValues.balance;
-                listOfBankObj = listOfBankObj.concat({obj});
+          let firstBankObj = await instance.methods.getBankInfos(listOfBank[0]).call();
+          selectedBankName = firstBankObj[0];
+          initialAmount = firstBankObj[1];
+        } catch(error){
+          console.log("failed to getBankInfos of listOfBank[0] : " + error);
+        }
+
+        /* Get infos related to the accounts bank if there is one*/
+        let myBankFund = 0;
+        let myBankName = "Not set";
+        let isBankOwner = false;
+        try{
+          let myBankObj = await instance.methods.getBankInfos(accounts[0]).call();
+          myBankName = myBankObj[0];
+          myBankFund = myBankObj[1];
+          isBankOwner = myBankObj[2];
+          this.setState({isBankOwner: isBankOwner,
+                          myBankFund: myBankFund,
+                          myBankName: myBankName});
+        } catch(error){
+          console.log("failed to getBankInfos of accounts[0] : " + error);
+        }
+
+        let displayWithraw = false;
+        if(listOfBank && listOfBank[0] === accounts[0] && initialAmount !== 0){
+          displayWithraw = true;
+        }
+
+        // WIP Retreive all the bank event to get name and Balance
+        try {
+          await instance.methods.getListOfBankObj().call();
+          try {
+            //TODO Improve this !!!!!!!!
+            await instance.getPastEvents(['LogListOfBank'], {fromBlock: 0, toBlock: 'latest'},
+              async (err, events) => {
+                var listOfBankObj = [];
+                for(let i=0; i<events.length;i++){
+                  if(events[i].event === "LogListOfBank"){
+                    var obj={};
+                    obj.name = events[i].returnValues.name;
+                    obj.address = events[i].returnValues.addr;
+                    obj.balance = events[i].returnValues.balance;
+                    listOfBankObj = listOfBankObj.concat({obj});
+                  }
+                }
+                this.setState(state => {
+                  return {
+                    listOfBankObj
+                  };
+                });
               }
-              this.setState(state => {
-                return {
-                  listOfBankObj
-                };
-              });
-            }
-          )
+            )
+          } catch (error){
+            console.log("No past event in getListOfBank");
+          }
         } catch (error){
-          console.log("No past event in getListOfBank");
+          console.log("Get list of bank OBJ failed");
         }
-      } catch (error){
-        console.log("Get list of bank OBJ failed");
+
+        const userHistory = await instance.methods.getUserHistory(accounts[0]).call();
+
+        // Set web3, accounts, and contract to the state, and then proceed with an
+        // example of interacting with the contract's methods.
+
+        this.setState({ web3,
+                        accounts,
+                        contract: instance,
+                        selectedBankFund: initialAmount,
+                        selectedBankName: selectedBankName,
+                        userFund: userAmount,
+                        userHistory: userHistory,
+                        listOfBank: listOfBank,
+                        displayWithraw: displayWithraw,
+                        currentBank: listOfBank[0],
+                      }, this.runExample);
+
+        // Loop To catch user wallet changes
+        setInterval(async () => {
+          let newAccount = await web3.eth.getAccounts(); ;
+          if (newAccount[0] !== this.state.accounts[0]) {
+            this.updateInterface(newAccount);
+          }
+        }, 1000);
+      } catch(error) {
+        console.log("Failed to communicate with the smart contract instance first call");
       }
-
-      const userHistory = await instance.methods.getUserHistory(accounts[0]).call();
-
-      // Set web3, accounts, and contract to the state, and then proceed with an
-      // example of interacting with the contract's methods.
-
-      this.setState({ web3,
-                      accounts,
-                      contract: instance,
-                      selectedBankFund: initialAmount,
-                      selectedBankName: selectedBankName,
-                      userFund: userAmount,
-                      userHistory: userHistory,
-                      listOfBank: listOfBank,
-                      displayWithraw: displayWithraw,
-                      currentBank: listOfBank[0],
-                    }, this.runExample);
-      // Loop To catch user wallet changes
-      setInterval(async () => {
-        let newAccount = await web3.eth.getAccounts(); ;
-        if (newAccount[0] !== this.state.accounts[0]) {
-          this.updateInterface(newAccount);
-        }
-      }, 1000);
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -301,9 +291,11 @@ class App extends Component {
   }
 
   render() {
-    if (!this.state.web3) {
-      return <div>Please Install Metamask to be able to Play to this smart contract</div>;
-    }
+    if (!this.state.web3 || !this.state.listOfBankObj) {
+      return (
+        <AppNotConnected/>
+      );
+    } else {
     return (
       <div className="app">
         <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
@@ -316,6 +308,7 @@ class App extends Component {
             </Nav>
             <Nav>
               <Nav.Link>Balance of your wallet: {this.state.userFund}</Nav.Link>
+              <Nav.Link>Account: {this.state.accounts[0]}</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Navbar>
@@ -332,33 +325,36 @@ class App extends Component {
                 updateFromComponent={this.updateFromComponent.bind(this)} />
 
         </div>
-        {this.state.listOfBankObj ? (
-        <div className="bank">
-          <SelectBank items={this.state.listOfBankObj}
-                      value={this.state.activity}
-                      onSelect={this.updateBankInfo}
-          />
-          <div> Balance of the bank {this.state.selectedBankName}
-                : {this.state.selectedBankFund}
+        <div className="gameContainer">
+          {this.state.listOfBankObj ? (
+          <div className="bank">
+            <SelectBank items={this.state.listOfBankObj}
+                        value={this.state.activity}
+                        onSelect={this.updateBankInfo}
+            />
+            <div>Bank Balance {this.state.selectedBankFund} ETH
+            </div>
+            <img src={image_bank} alt="image_bank" />
           </div>
-        </div>
-        ):(
-        <div>
-        </div>
-        )}
+          ):(
+          <div>
+          </div>
+          )}
 
-
-        <div className="gameInteraction">
-          <Flip accounts={this.state.accounts}
-                contract={this.state.contract}
-                currentBank={this.state.currentBank}
-                web3={this.state.web3}
-                updateFromComponent={this.updateFromComponent.bind(this)} />
-          <p> You have {this.state.lastFlip}</p>
-          <div>History: {this.state.userHistory}</div>
+          <div className="gameInteraction">
+            <p> You have {this.state.lastFlip}</p>
+            <div>History: {this.state.userHistory}</div>
+            <img src={image_gangster} alt="image_gangster" />
+            <Flip accounts={this.state.accounts}
+                  contract={this.state.contract}
+                  currentBank={this.state.currentBank}
+                  web3={this.state.web3}
+                  updateFromComponent={this.updateFromComponent.bind(this)} />
+          </div>
         </div>
       </div>
     );
+    }
   }
 }
 

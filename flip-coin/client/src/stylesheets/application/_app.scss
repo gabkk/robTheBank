@@ -7,9 +7,7 @@
 %box-elem {
 	padding: 30px;
 	padding-bottom: 10px;
-	margin-top: 100px;
-	float: left;
-	background-color: #fff;
+	width: 50%;
 }
 
 .bankManagement{
@@ -27,6 +25,65 @@ div {
 			background-color: blue;
 		}
 	}
+}
+
+.gameContainer{
+	height: 100px;
+	width: 100%;
+	margin-top: 20px;
+    text-align: center;
+}
+
+.gameInteraction{
+	@extend %box-elem;
+	margin-left: 30px;
+	.actionRob {
+		height: 100px;
+		width: 100%;
+		margin-top: 20px;
+	    text-align: center;
+
+		input{
+			height: 50%;
+			width-min: 100px;
+			text-align: center;
+            border: none;
+		    display: inline-block;
+		    margin-left: 2px;
+		    margin-right: 20%;
+		    position: relative;
+		    top: 15%;
+		}
+		button{
+			border-style: solid;
+			border-color: red;
+			height: 70%;
+			width: 100px;
+			border-radius: 20px;
+		    display: inline-block;
+		    margin-left: 2px;
+		    margin-right: 2px;
+		    position: relative;
+		    top: 15%;
+		}
+	}
+
+	#robItButton{
+	    color: #fff !important;
+	    text-transform: uppercase;
+	    text-decoration: none;
+	    background: #293a41;
+	    padding: 18px;
+	    border-radius: 17px;
+	    display: inline-block;
+	    border: none;
+	    transition: all 0.4s ease 0s;
+	}
+}
+
+.bank{
+	@extend %box-elem;
+	float: right;
 }
 
 .ManagementContainer{
@@ -60,12 +117,3 @@ div {
 }
 
 
-.bank{
-	@extend %box-elem;
-}
-
-.gameInteraction{
-	@extend %box-elem;
-	margin-left: 30px;
-	clear: both;
-}
