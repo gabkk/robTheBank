@@ -5,18 +5,19 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 //import FormControl from 'react-bootstrap/FormControl';
 
 
-import CoinFlip from "./contracts/CoinFlip.json";
+import RobTheBank from "./contracts/RobTheBank.json";
 import getWeb3 from "./utils/getWeb3";
 
 import Flip from "./components/Flip";
 import AppNotConnected from "./components/AppNotConnected";
 import BankManagement from "./components/BankManagement";
 import SelectBank from "./utils/SelectBank"
+import {displayRobQuote} from "./utils/typeWriter.js"
 
 import "./App.css";
 import "./stylesheets/application.scss";
 import image_gangster from "./images/gangster.jpg";
-import image_bank from "./images/image_bank.png";
+import image_bank from "./images/image_bank.jpg";
 
 
 class App extends Component {
@@ -58,9 +59,9 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = CoinFlip.networks[networkId];
+      const deployedNetwork = RobTheBank.networks[networkId];
         const instance = new web3.eth.Contract(
-          CoinFlip.abi,
+          RobTheBank.abi,
           deployedNetwork && deployedNetwork.address
         );
 
@@ -169,6 +170,7 @@ class App extends Component {
         }, 1000);
       } catch(error) {
         console.log("Failed to communicate with the smart contract instance first call");
+        console.log("Try to connect metamask and refresh your page.");
       }
 
     } catch (error) {
@@ -176,6 +178,7 @@ class App extends Component {
       console.log("Failed to load web3, accounts, or contract. Check console for details.");
       console.error(error);
     }
+    displayRobQuote();
   };
 
   updateInterface = async (accounts) =>{
@@ -299,7 +302,7 @@ class App extends Component {
     return (
       <div className="app">
         <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
-          <Navbar.Brand href="#home">Robe The Bank</Navbar.Brand>
+          <Navbar.Brand href="#home">Rob The Bank</Navbar.Brand>
           <Navbar.Toggle aria-controls="responsive-navbar-nav" />
           <Navbar.Collapse id="responsive-navbar-nav">
             <Nav className="mr-auto">
@@ -313,17 +316,22 @@ class App extends Component {
           </Navbar.Collapse>
         </Navbar>
         <div className="bankManagement">
-          <BankManagement accounts={this.state.accounts}
+          <BankManagement
+                web3={this.state.web3}
+                accounts={this.state.accounts}
                 myBankFund={this.state.myBankFund}
                 contract={this.state.contract}
                 currentBank={this.state.currentBank}
-                web3={this.state.web3}
                 displayWithraw={this.state.displayWithraw}
                 isBankOwner={this.state.isBankOwner}
                 myBankName={this.state.myBankName}
                 listOfBankObj={this.state.listOfBankObj}
                 updateFromComponent={this.updateFromComponent.bind(this)} />
 
+        </div>
+        <div className="RobQuote">
+          <p id="RobText"></p>
+          <p id="RobText2"></p>
         </div>
         <div className="gameContainer">
           {this.state.listOfBankObj ? (
@@ -332,7 +340,7 @@ class App extends Component {
                         value={this.state.activity}
                         onSelect={this.updateBankInfo}
             />
-            <div>Bank Balance {this.state.selectedBankFund} ETH
+            <div>Bank Balance {this.state.web3.utils.fromWei(this.state.selectedBankFund, "ether")} Eth
             </div>
             <img src={image_bank} alt="image_bank" />
           </div>
@@ -343,7 +351,7 @@ class App extends Component {
 
           <div className="gameInteraction">
             <p> You have {this.state.lastFlip}</p>
-            <div>History: {this.state.userHistory}</div>
+            <div>History: {this.state.web3.utils.fromWei(this.state.userHistory, "ether")} Eth</div>
             <img src={image_gangster} alt="image_gangster" />
             <Flip accounts={this.state.accounts}
                   contract={this.state.contract}

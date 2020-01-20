@@ -5,7 +5,7 @@ import '../client/node_modules/@openzeppelin/contracts/drafts/SignedSafeMath.sol
 // Import SafeMath library from github (this import only works on Remix).
 //import "https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract CoinFlip{
+contract RobTheBank{
 
 	using SafeMath for uint256;
 	using SignedSafeMath for int256;
@@ -111,8 +111,8 @@ contract CoinFlip{
 	*/
 
 	function flip(address _bankAddr) payable public returns (bool){
-		
-		require(1 ether > msg.value, "bet should be less than 1 eth");
+		// To avoid the Martingale we need a limit
+		require(10 ether > msg.value, "bet should be less than 10 eth");
 		require(msg.value > 0, "bet can't be 0");
 		require(Banks[_bankAddr].balance >= msg.value, "bank balance should be greater than the jackpot");
 

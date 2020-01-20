@@ -1,5 +1,5 @@
-var CoinFlip = artifacts.require("./CoinFlip.sol");
+var RobTheBank = artifacts.require("./RobTheBank.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(CoinFlip, {value: 100000000});
+  deployer.deploy(RobTheBank, {value: web3.utils.toWei("1", "ether")});
 };

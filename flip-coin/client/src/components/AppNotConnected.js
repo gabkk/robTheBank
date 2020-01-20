@@ -60,6 +60,10 @@ class AppNotConnected extends Component{
                 />
 
         </div>
+        <div className="RobQuote">
+          <p id="RobText"></p>
+          <p id="RobText2"></p>
+        </div>
         <div className="gameContainer">
           {this.state.listOfBankObj ? (
           <div className="bank">

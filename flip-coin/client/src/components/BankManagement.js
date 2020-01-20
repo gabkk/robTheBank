@@ -66,8 +66,12 @@ class BankManagement extends Component{
   sendMoney = async () => {
 	const { accounts, contract, currentBank, web3 } = this.props;
     let ret;
+    console.log("sendMoney");
+    console.log(this.state.sendFund);
+    console.log(typeof(this.state.sendFund));
+    let valueInWei = web3.utils.toWei(this.state.sendFund, "ether")
     try{
-      await contract.methods.sendMoneyToTheBank().send({from: accounts[0], value: parseInt(this.state.sendFund)});
+      await contract.methods.sendMoneyToTheBank().send({from: accounts[0], value: valueInWei});
     } catch(error){
       console.log("BankManagement sendMoney: send money to bank failed" + error);
     }
@@ -92,6 +96,7 @@ class BankManagement extends Component{
   withdraw = async () => {
     const { accounts, contract, currentBank, web3 } = this.props;
     let ret;
+    let bankFund;
     try{
       await contract.methods.withdrawBankAccount().send({from: accounts[0]});
     } catch(error){
@@ -102,15 +107,27 @@ class BankManagement extends Component{
     } catch (error){
       console.log("updateBalances failed:" + error);
     }
-    this.props.updateFromComponent({displayWithraw: false, userFund: ret.userFund, myBankFund: 0});
+    try {
+        bankFund = await contract.methods.getBankBalance(this.state.currentBank).call();
+    } catch (error){
+        console.log("BankManagement createNewBank fail to get Bank balance");
+    }
+    this.props.updateFromComponent({displayWithraw: false,
+                                    bankFund: bankFund,
+                                    userFund: ret.userFund,
+                                    myBankFund: 0});
   };
 
   createNewBank = async(value) => {
-    const { accounts, contract } = this.props;
+    const { accounts, contract, web3 } = this.props;
     let listOfBank;
     let bankFund;
+    console.log("sendMoney");
+    console.log(this.state.sendFundToNewBank);
+    console.log(typeof(this.state.sendFundToNewBank));
+    let valueInWei = web3.utils.toWei(this.state.sendFundToNewBank, "ether")
     try{
-      await contract.methods.createBank(this.state.nameToCreateBank).send({from: accounts[0], value: parseInt(this.state.sendFundToNewBank)});
+      await contract.methods.createBank(this.state.nameToCreateBank).send({from: accounts[0], value: valueInWei});
       try {
         bankFund = await contract.methods.getBankBalance(this.state.currentBank).call();
       } catch (error){
@@ -163,9 +180,10 @@ class BankManagement extends Component{
   setAmount = e => {
     if (e.target.name === "valueToSendToBank"){
       this.setState({ sendFund: e.target.value });
-      console.log("value to bank" + e.target.value);
+      console.log("value to send to the bank" + e.target.value);
     } else if (e.target.name === "valueToCreateBank"){
       this.setState({ sendFundToNewBank: e.target.value });
+      console.log("value to create bank" + e.target.value);
     }
     if (e.target.name === "nameToCreateBank"){
       this.setState({ nameToCreateBank: e.target.value });
@@ -183,7 +201,7 @@ class BankManagement extends Component{
             }
             <div className="ManagementBankInfo">
               <p>Bank {this.state.myBankName}</p>
-              <p> funds {this.state.myBankFund}</p>
+              <p> funds {this.props.web3.utils.fromWei(this.state.myBankFund, "ether")} Eth</p>
             </div>
             
             <FormControl
@@ -220,7 +238,7 @@ class BankManagement extends Component{
               aria-describedby="basic-addon2"
               type="text"
               name="nameToCreateBank"
-              maxlength="20"
+              maxLength="20"
               onChange={ this.setAmount }
             />
             <InputGroup.Append>
