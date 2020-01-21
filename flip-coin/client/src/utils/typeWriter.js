@@ -16,3 +16,14 @@ export const  displayRobQuote = () => {
 	typeWriter(i, "RobText", txt);
 	setTimeout(() => typeWriter(j, "RobText2", txt2), 3000);	
 }
+
+// export const loadingRobbering = (status) =>{
+// 	if (i < 100 && status === true){
+// 		let el = document.getElementById("loadingRobery");
+// 		el.innerHTML = i + "%";
+// 		el.style.width = i + "%"; 
+// 		i++;
+// 		setTimeout(() => loadingRobbering(status),500);
+// 	}
+// }
+

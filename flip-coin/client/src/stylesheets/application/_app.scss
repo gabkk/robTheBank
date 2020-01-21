@@ -10,17 +10,6 @@
 	width: 50%;
 }
 
-div {
-	.mb-3 {
-		margin: 0px;
-
-		.my-3{
-			margin: 0px;
-			background-color: blue;
-		}
-	}
-}
-
 .RobQuote{
 	display: block;
 	width: 100%;
@@ -49,6 +38,11 @@ div {
 	width: 100%;
 	margin-top: 20px;
     text-align: center;
+}
+
+.loadingRobbery{
+	margin-left: auto;
+    margin-right: auto;
 }
 
 .gameInteraction{

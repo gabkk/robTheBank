@@ -2,10 +2,13 @@ import React, { Component } from "react";
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ReactLoading from 'react-loading';
+
 //import FormControl from 'react-bootstrap/FormControl';
 
 
-import RobTheBank from "./contracts/RobTheBank.json";
+//import RobTheBank from "./contracts/RobTheBank.json";
+import RobTheBank from "./contracts/RobTheBankRopsten.json";
 import getWeb3 from "./utils/getWeb3";
 
 import Flip from "./components/Flip";
@@ -33,9 +36,10 @@ class App extends Component {
       myBankFund: 0,
       userFund: 0,
       userHistory: 0,
-      lastFlip: "not play yet",
+      lastFlip: "not played yet !!! Try to rob a bank",
       myBankName: null,
       listOfBank: null,
+      loading: false,
       displayWithraw: false,
       isBankOwner: false,
       listOfBankObj: []
@@ -248,7 +252,6 @@ class App extends Component {
     } catch (error){
       console.log("list of bank empty");
     }
-    console.log("Current bank type: " +typeof(listOfBank[setBankIndex]) + " , value:" + listOfBank[setBankIndex]);
 
     /*Set value for the selected bank*/
     try {
@@ -343,6 +346,10 @@ class App extends Component {
             <div>Bank Balance {this.state.web3.utils.fromWei(this.state.selectedBankFund, "ether")} Eth
             </div>
             <img src={image_bank} alt="image_bank" />
+            <div id="loadingRoberyTitle">Robbery not started</div>
+            {this.state.loading &&
+                <ReactLoading className="loadingRobbery" type={"cylon"} color={"#071134"} height={50} width={50} />
+            }
           </div>
           ):(
           <div>
@@ -350,10 +357,12 @@ class App extends Component {
           )}
 
           <div className="gameInteraction">
-            <p> You have {this.state.lastFlip}</p>
-            <div>History: {this.state.web3.utils.fromWei(this.state.userHistory, "ether")} Eth</div>
+            <h5> You have {this.state.lastFlip}</h5>
+            <h5>History: {this.state.web3.utils.fromWei(this.state.userHistory, "ether")} Eth</h5>
             <img src={image_gangster} alt="image_gangster" />
-            <Flip accounts={this.state.accounts}
+            <Flip 
+                  loading={this.state.loading}
+                  accounts={this.state.accounts}
                   contract={this.state.contract}
                   currentBank={this.state.currentBank}
                   web3={this.state.web3}

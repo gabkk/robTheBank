@@ -22,7 +22,7 @@ class AppNotConnected extends Component{
       myBankFund: 0,
       userFund: 0,
       userHistory: 0,
-      lastFlip: "not play yet",
+      lastFlip: "not played yet !!! Try to rob a bank",
       myBankName: null,
       listOfBank: null,
       displayWithraw: false,
@@ -84,8 +84,8 @@ class AppNotConnected extends Component{
           )}
 
           <div className="gameInteraction">
-            <p> You have {this.state.lastFlip}</p>
-            <div>History: {this.state.userHistory}</div>
+            <h5> You have {this.state.lastFlip}</h5>
+            <h5>History: {this.state.userHistory} Eth</h5>
             <img src={image_gangster} alt="image_gangster" />
             <Flip accounts={this.state.accounts}
                   contract={this.state.contract}

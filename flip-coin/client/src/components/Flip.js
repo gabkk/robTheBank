@@ -5,17 +5,21 @@ class Flip extends React.Component{
   state = { sendAmountToBet: "0.1" };
 
   flip = async () => {
-  	console.log("Inside flip");
-  	console.log(this.props);
     const { accounts, contract, currentBank, web3 } = this.props;
     if (!isNaN(this.state.sendAmountToBet)){
       let bankBalance = 0;
       let userBalance = 0;
       let userHistory = 0;
       var gameStatus = "not play yet";
-      console.log(this.state.sendAmountToBet);
+      
+      /*Modify the message value when a robing is started*/
+      let el = document.getElementById("loadingRoberyTitle");
+      el.innerHTML = "Robbery in progress";
+
       var amountInWei = web3.utils.toWei(this.state.sendAmountToBet, "ether");
       try {
+        
+        this.props.updateFromComponent({loading: true});
         var responseFlip = await contract.methods.flip(currentBank).send({ from: accounts[0], value: parseInt(amountInWei), gas: 70000});
         if (responseFlip.events.ReturnValue.returnValues[0] === true){
           gameStatus = "Win";
@@ -25,7 +29,6 @@ class Flip extends React.Component{
         }
         try {
           userHistory = await contract.methods.getUserHistory(accounts[0]).call();
-          console.log("this is user historic" + userHistory);
         } catch (error){
           console.log("fail to get User balance");
         }
@@ -43,18 +46,21 @@ class Flip extends React.Component{
         /*
 		    * Send the result of the new state to the parent component
         */
-        this.props.updateFromComponent({userFund: userBalance,
+        el.innerHTML = "Robbery Done !!";
+        this.props.updateFromComponent({loading: false,
+                                        userFund: userBalance,
                                         lastFlip: gameStatus,
                                         userHistory: userHistory,
                                         bankFund: bankBalance});
       } catch (error){
+        el.innerHTML = "Robbery Failed";
+        this.props.updateFromComponent({loading: false});
         console.log("error When fliping"+ error);
-      }
+      } 
     }
   };
 
   setAmount = e => {
-    console.log(e.target.value)
   if (e.target.name === "value"){
       this.setState({ sendAmountToBet: e.target.value });
     }
