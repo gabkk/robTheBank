@@ -1,37 +1,15 @@
-const RobTheBank = artifacts.require("./RobTheBank.sol");
+const RobTheBank = artifacts.require("RobTheBank");
+const truffleAssert = require('truffle-assertions');
 
-contract("RobTheBank", function(accounts){
+contract("RobTheBank", async function(accounts){
 
   const bank_value = 50000;
   const wallet1 = accounts[0];
 
   beforeEach('setup contract for each test', async() => {
     RobTheBankInstance = await RobTheBank.new({from: wallet1, value: bank_value});
+    //console.log(RobTheBankInstance);
   })
-
-  /*
-  *  Simple tests of getter
-  */
-
-  it("...[simple] Should set the initial bank address with account[0]", async () => {
-    const banksaddr = await RobTheBankInstance.getListOfBank();
-    assert.equal(banksaddr[0], wallet1, "The contract is not set with the first account.");
-  });
-
-  it("...[simple] Should set the initial bank deposit with the value of 'bank_value'", async () => {
-    const value = await RobTheBankInstance.getBankBalance.call(wallet1);
-    assert.equal(value, bank_value, "The value 'bank_value' was not stored.");
-  });
-
-  it("...[simple] User historic should be 0", async () => {
-    const value = await RobTheBankInstance.getUserHistory.call(wallet1);
-    assert.equal(value, 0, "The value of user history is not 0");
-  });
-
-  it("...[simple] Should set the initial lastFlip to false", async () => {
-    const value = await RobTheBankInstance.getLastFlip.call(wallet1);
-    assert.equal(false, value, "The value lastFlip should be equal to zero");
-  });
 
   /*
   *  Flip require test 
@@ -79,7 +57,7 @@ contract("RobTheBank", function(accounts){
   it("...[flip] A bet value up to the maximum of half of the bank value should be wrong", async () => {
     const banksaddr = await RobTheBankInstance.getListOfBank();
     const initial_value = await RobTheBankInstance.getBankBalance.call(wallet1);
-    const wrong_bet_value = initial_value/2+1000;
+    const wrong_bet_value = initial_value+1000;
     let is_error = 0;
     try {
     	await RobTheBankInstance.flip(banksaddr[0], { from: wallet1, value: wrong_bet_value, gas: 900000});
@@ -107,18 +85,25 @@ contract("RobTheBank", function(accounts){
   /*
   *	 Mutliples tests
   */
-
-  it("...[complex] After a flip the balance of the bank and the user should be balance", async () => {
+  it("...[complex] After a flip the balance of the bank and the user should increase and decrease equaly", async () => {
     const banksaddr = await RobTheBankInstance.getListOfBank();
     const amount_bet = 5000;
     const initial_value = await RobTheBankInstance.getBankBalance.call(wallet1);
-    try{
-    	await RobTheBankInstance.flip(banksaddr[0], { from: wallet1, value: amount_bet, gas: 900000});
-    } catch (error){
-    	assert(error.toString().includes('invalid opcode'), error.toString());
+    let lastflip;
+    try {
+      let result = await RobTheBankInstance.flip(banksaddr[0], { from: wallet1, value: amount_bet, gas: 900000});
+      try {
+        truffleAssert.eventEmitted(result, 'ReturnValue', (ev) => {
+          lastflip = ev[0];
+          return lastflip;
+        });        
+      } catch {
+        console.log("Can't catch emmit");
+      }
+    } catch {
+      console.log("Flip error");
     }
-    const lastflip = await RobTheBankInstance.getLastFlip(wallet1);
-    let rst = 0;
+
     (lastflip == true) ? rst = amount_bet : rst = -amount_bet;
     const last_call_history = await RobTheBankInstance.getUserHistory.call(wallet1);
     const current_value = await RobTheBankInstance.getBankBalance.call(wallet1);

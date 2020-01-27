@@ -7,7 +7,7 @@ flip-coin/.secret*
 flip-coin/client/.secret
 flip-coin/client/.secret*
 flip-coin/client/*lock
-flip-coin/contracts
+flip-coin/client/src/contracts/*.json
 flip-coin/build/contracts/*.json
 flip-coin/.DS_Store
 node_modules/

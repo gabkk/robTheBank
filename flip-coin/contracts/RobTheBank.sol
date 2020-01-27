@@ -16,8 +16,8 @@ contract RobTheBank{
         bool isCreated;
     }
 
-	mapping (address => int256) userHistory;
-	mapping(address => Bank) Banks;
+	mapping (address => int256) public userHistory;
+	mapping(address => Bank) public Banks;
 	address public owner;
 	address[] public listOfBank;
 
@@ -62,11 +62,11 @@ contract RobTheBank{
 		return listOfBank.length;
 	}
 
-	function getListOfBank() payable public returns(address[] memory){
+	function getListOfBank() view public returns(address[] memory){
 		return listOfBank;
 	}
 
-	function getListOfBankObj() payable public {
+	function getListOfBankObj() public {
 		for(uint i=0; i < listOfBank.length; i++){
 			emit LogListOfBank(getBankName(listOfBank[i]), listOfBank[i], getBankBalance(listOfBank[i]));
 		}

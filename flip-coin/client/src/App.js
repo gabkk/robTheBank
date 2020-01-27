@@ -7,8 +7,8 @@ import ReactLoading from 'react-loading';
 //import FormControl from 'react-bootstrap/FormControl';
 
 
-//import RobTheBank from "./contracts/RobTheBank.json";
-import RobTheBank from "./contracts/RobTheBankRopsten.json";
+import RobTheBank from "./contracts/RobTheBank.json";
+//import RobTheBank from "./contracts/RobTheBankRopsten.json";
 import getWeb3 from "./utils/getWeb3";
 
 import Flip from "./components/Flip";
@@ -77,6 +77,8 @@ class App extends Component {
       let listOfBank;
       try {
         listOfBank = await instance.methods.getListOfBank().call();
+        console.log("componentDidMount List of Bank");
+        console.log(listOfBank);
         this.setState({listOfBank: listOfBank});
         /*
         * bankObj
@@ -248,6 +250,8 @@ class App extends Component {
     let nameOfBank = "Default";
     try {
       listOfBank = await contract.methods.getListOfBank().call();
+      console.log("updateBankInfo List of Bank");
+      console.log(listOfBank);
       this.setState({listOfBank: listOfBank});
     } catch (error){
       console.log("list of bank empty");
