@@ -6,6 +6,10 @@ flip-coin/.secret
 flip-coin/.secret*
 flip-coin/client/.secret
 flip-coin/client/.secret*
+flip-coin/client/*lock
+flip-coin/contracts
+flip-coin/build/contracts/*.json
+flip-coin/.DS_Store
 node_modules/
 flip-coin/node_modules/
 package-lock.json
