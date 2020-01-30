@@ -110,5 +110,22 @@ contract("RobTheBank", async function(accounts){
     assert.equal(last_call_history, rst, "The value of user history is not equal to the result of the flip");
     assert.equal(current_value, initial_value - rst , "The balance of the bank is not equal to the initial value plus the result the flip");
   });
+  /*
+  *  TODO
+  */
+ 
+  /* createBank and move it up*/
+  /* modifiers */
+  /* pseudoRandom */
+  /* flip */
+  /* sendMoneyToTheBank */
+  /* isBankOwner */
+  /* withdrawBankAccount */
+  /* destroyContract */
+  
+  /*
+  *  TODO Test requires
+  */
+
 
 });

@@ -36,6 +36,9 @@ contract RobTheBank{
 		emit LogListOfBank("FED", msg.sender, msg.value);
 	}
 
+
+	/* Move Modifier to an other file*/
+
 	modifier onlyOwner{
 		require(owner == msg.sender);
 		_;
@@ -66,6 +69,7 @@ contract RobTheBank{
 		return listOfBank;
 	}
 
+	/* Todo test view */
 	function getListOfBankObj() public {
 		for(uint i=0; i < listOfBank.length; i++){
 			emit LogListOfBank(getBankName(listOfBank[i]), listOfBank[i], getBankBalance(listOfBank[i]));
