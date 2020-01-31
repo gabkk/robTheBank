@@ -28,7 +28,7 @@ contract RobTheBank{
 		owner = msg.sender;
 
 		// Contract address
-		require(msg.value > 0);
+		require(msg.value >= 0.1 ether);
 		Banks[msg.sender].balance = msg.value;
 		Banks[msg.sender].name = "FED";
 		Banks[msg.sender].isCreated = true;
@@ -38,9 +38,18 @@ contract RobTheBank{
 
 
 	/* Move Modifier to an other file*/
-
 	modifier onlyOwner{
 		require(owner == msg.sender);
+		_;
+	}
+
+	modifier messValueCantBeZero{
+		require(msg.value > 0 ether, "msg.value can't 0");
+		_;
+	}
+
+	modifier msgValueMin{
+		require(msg.value >= 0.1 ether, "bet can't be less than 0,1");
 		_;
 	}
 
@@ -53,7 +62,8 @@ contract RobTheBank{
 	function createBank(string memory _name) public payable{
 		require(Banks[msg.sender].isCreated == false, "You can only own one bank");
 		require(bytes(_name).length < 21);
-		require(msg.value > 0);
+		require(bytes(_name).length > 0);
+		require(msg.value >= 0.1 ether);
 		Banks[msg.sender].balance = msg.value;
 		Banks[msg.sender].isCreated = true;
 		Banks[msg.sender].name = _name;
@@ -100,13 +110,13 @@ contract RobTheBank{
 	*/
 	function pseudoRandom() private view returns (uint8) {
 		uint256 firstRes = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)));
-		uint8 result = uint8(firstRes.mod(251)); 
+		uint8 result = uint8(firstRes.mod(251));
 		return result;
 	}
 
 	/*	Error Cases
 	*
-	*	error -1 Bet can't be more than 0.5
+	*	error -1 Bet can't be more than 10
 	*	error -2 user bet could't be null
 	*	error -3 Contract address don't have enought found to pay the user
 	*	error -4 The value is too big regarding to the previous contract rules
@@ -114,10 +124,9 @@ contract RobTheBank{
 	*
 	*/
 
-	function flip(address _bankAddr) payable public returns (bool){
+	function flip(address _bankAddr) public payable msgValueMin returns (bool){
 		// To avoid the Martingale we need a limit
-		require(10 ether > msg.value, "bet should be less than 10 eth");
-		require(msg.value > 0, "bet can't be 0");
+		require(msg.value < 10 ether, "bet should be less than 10 eth");
 		require(Banks[_bankAddr].balance >= msg.value, "bank balance should be greater than the jackpot");
 
 		// Run the pseudorandom function
@@ -139,7 +148,7 @@ contract RobTheBank{
 		return false;
 	}
 
-	function sendMoneyToTheBank() public payable {
+	function sendMoneyToTheBank() public payable messValueCantBeZero {
 		require(Banks[msg.sender].isCreated == true, "You don't have a bank yet");
 		Banks[msg.sender].balance = Banks[msg.sender].balance.add(msg.value);
 	}
@@ -152,8 +161,9 @@ contract RobTheBank{
 
 	function withdrawBankAccount() public payable isBankCreated{
 		require(Banks[msg.sender].balance != 0);
-		msg.sender.transfer(Banks[msg.sender].balance);
+		uint value = Banks[msg.sender].balance;
 		Banks[msg.sender].balance = 0;
+		msg.sender.transfer(value);
 	}
 
 	function destroyContract() public onlyOwner{
