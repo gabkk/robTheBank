@@ -30,7 +30,7 @@ contract("RobTheBank", async function(accounts){
                                                           value: 0,
                                                           gas: 70000
                                                         }),
-                                                        "bet can't be less than 0,1");
+                                                        "bet should more than 0.01 eth");
   });
 
   it("...[flip] A bet value should be maximum the bank value", async () => {
@@ -133,16 +133,21 @@ contract("RobTheBank", async function(accounts){
   */
 
 
-  it("...[complex] After a flip the balance of the bank and the user should increase and decrease equaly", async () => {
+  it("...[complex] After a flip the balance of the bank and the user should increase and decrease equaly, we use the account without oracle for the test",
+    async () => {
+    await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
+                          { from: wallet2,
+                            value: bank_value2
+                          }));
     const banksaddr = await RobTheBankInstance.getListOfBank();
     const amount_bet = flip_value;
-    const initial_value = await RobTheBankInstance.getBankBalance.call(wallet1);
+    const initial_value = await RobTheBankInstance.getBankBalance.call(wallet2);
     let lastflip;
     try {
-      let result = await RobTheBankInstance.flip(banksaddr[0], { from: wallet1, value: amount_bet, gas: 900000});
+      let result = await RobTheBankInstance.flip(banksaddr[1], false, { from: wallet2, value: amount_bet, gas: 900000});
       try {
         truffleAssert.eventEmitted(result, 'ReturnValue', (ev) => {
-          lastflip = ev[0];
+          lastflip = ev[2];
           return lastflip;
         });
       } catch {
@@ -153,8 +158,8 @@ contract("RobTheBank", async function(accounts){
     }
     let rst = 0;
     (lastflip == true) ? rst = amount_bet : rst = -amount_bet;
-    const last_call_history = await RobTheBankInstance.getUserHistory.call(wallet1);
-    const current_value = await RobTheBankInstance.getBankBalance.call(wallet1);
+    const last_call_history = await RobTheBankInstance.getUserHistory.call(wallet2);
+    const current_value = await RobTheBankInstance.getBankBalance.call(wallet2);
 
     assert.equal(last_call_history, rst, "The value of user history is not equal to the result of the flip");
     assert.equal(current_value, initial_value - rst , "The balance of the bank is not equal to the initial value plus the result the flip");

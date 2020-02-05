@@ -35,15 +35,12 @@ contract("RobTheBankSimple", async function(accounts){
     assert.equal(owner, wallet1, "The contract owner is not the first account.");
   });
 
-  it("...[constructor] The first bank own by account[0] should have the default param", async () => {
-    const bankDefault = await RobTheBankInstance.Banks(accounts[0]);
-    
-    assert.equal(bankDefault.name, bank_default_name,
-    			"The first bank create in the constructor should have the default name.");
-    assert.equal(bankDefault.isCreated, bank_default_is_create,
-    			"The first bank create in the constructor should the isCreated parameter set to true.");
-    assert.equal(bankDefault.balance, bank_value,
-    			"The first bank create in the constructor should have the default balance.");
+  it("...[constructor] The first bank own by account[0] should have the default param", async () => {    
+    const bankDefault = await RobTheBankInstance.getBankInfos.call(wallet1);
+    assert.equal(bankDefault[0], bank_default_name, "The name of the default bank was not stored.");
+    assert.equal(bankDefault[1], bank_value, "The balance of the default bank was not stored.");
+    assert.equal(bankDefault[2], true, "The status is_created should be set to true.");
+    assert.equal(bankDefault[3], true, "The status is_oracle should be set to true.");    
   });
 
   it("...[constructor] The first bank should be push into the listOfBank", async () => {
@@ -68,7 +65,7 @@ contract("RobTheBankSimple", async function(accounts){
   *  Simple tests for create Bank
   */
   it("...[simple createBank] The bank creation should failed if no name is provided", async() => {
-  	await truffleAssert.reverts(RobTheBankInstance.createBank("",
+  	await truffleAssert.reverts(RobTheBankInstance.createBank("", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}),
@@ -76,7 +73,7 @@ contract("RobTheBankSimple", async function(accounts){
   });
 
   it("...[simple createBank] The bank creation should failed if the name is greater than 20 char", async() => {
-  	await truffleAssert.reverts(RobTheBankInstance.createBank("012345678901234567890",
+  	await truffleAssert.reverts(RobTheBankInstance.createBank("012345678901234567890", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}),
@@ -84,7 +81,7 @@ contract("RobTheBankSimple", async function(accounts){
   });
 
   it("...[simple createBank] You shouldn't be able to create two bank with the same account", async() => {
-  	await truffleAssert.reverts(RobTheBankInstance.createBank("FED2",
+  	await truffleAssert.reverts(RobTheBankInstance.createBank("FED2", false ,
   															{ from: wallet1,
   															  value: bank_value
   															}),
@@ -92,7 +89,7 @@ contract("RobTheBankSimple", async function(accounts){
   });
 
   it("...[simple createBank] You shouldn't be able to create two bank with the same account", async() => {
-  	await truffleAssert.reverts(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.reverts(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: web3.utils.toWei("0.09", 'ether')
   															}),
@@ -100,18 +97,15 @@ contract("RobTheBankSimple", async function(accounts){
   });
 
   it("...[simple createBank] You should be able to create a second bank", async() => {
-  	let result = await RobTheBankInstance.createBank("secondBank",
+  	let result = await RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															});
-    const secondBank = await RobTheBankInstance.Banks(wallet2);
-    
-    assert.equal(secondBank.name, "secondBank",
-    			"The first bank create in the constructor should have the default name.");
-    assert.equal(secondBank.isCreated, true,
-    			"The first bank create in the constructor should the isCreated parameter set to true.");
-    assert.equal(secondBank.balance, bank_value2,
-    			"The first bank create in the constructor should have the default balance.");
+    const secondBank = await RobTheBankInstance.getBankInfos.call(wallet2);
+    assert.equal(secondBank[0], "secondBank", "The name of the default bank was not stored.");
+    assert.equal(secondBank[1], bank_value2, "The balance of the default bank was not stored.");
+    assert.equal(secondBank[2], true, "The status is_created should be set to true.");
+    assert.equal(secondBank[3], false, "The status is_oracle shouldn't be set to true."); 
 
     let secondBankFromList = 0;
     try {
@@ -140,7 +134,7 @@ contract("RobTheBankSimple", async function(accounts){
   });
 
   it("...[simple getBankLength] Should increase to two the bank array when creating a new bank", async () => {
-  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}));
@@ -156,7 +150,7 @@ contract("RobTheBankSimple", async function(accounts){
   });
 
   it("...[simple getListOfBank] Should set the list of Banks with two bank", async () => {
-  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}));
@@ -179,7 +173,7 @@ contract("RobTheBankSimple", async function(accounts){
   it("...[simple getListOfBankObj] Should emit one event LogListOfBank", async () => {
 
   	/* Add the seconde bank*/
-  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}));
@@ -210,7 +204,7 @@ contract("RobTheBankSimple", async function(accounts){
 
   it("...[simple getBankBalance] Should get the balance of the new bank created", async () => {
       	/* Add the seconde bank*/
-  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}));
@@ -232,7 +226,7 @@ contract("RobTheBankSimple", async function(accounts){
 
   it("...[simple getBankName] Should get the name of the new bank created", async () => {
       	/* Add the seconde bank*/
-  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}));
@@ -259,7 +253,7 @@ contract("RobTheBankSimple", async function(accounts){
 
   it("...[simple getBankInfos] Should get all the elements from the bank structure created", async () => {
       	/* Add the seconde bank*/
-  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank",
+  	await truffleAssert.passes(RobTheBankInstance.createBank("secondBank", false ,
   															{ from: wallet2,
   															  value: bank_value2
   															}));
