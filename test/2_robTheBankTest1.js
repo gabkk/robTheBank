@@ -144,7 +144,7 @@ contract("RobTheBank", async function(accounts){
     const initial_value = await RobTheBankInstance.getBankBalance.call(wallet2);
     let lastflip;
     try {
-      let result = await RobTheBankInstance.flip(banksaddr[1], false, { from: wallet2, value: amount_bet, gas: 900000});
+      let result = await RobTheBankInstance.flip(banksaddr[1], { from: wallet2, value: amount_bet, gas: 900000});
       try {
         truffleAssert.eventEmitted(result, 'ReturnValue', (ev) => {
           lastflip = ev[2];
