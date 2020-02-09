@@ -19,8 +19,6 @@ class Flip extends React.Component{
 
       var amountInWei = web3.utils.toWei(this.state.sendAmountToBet, "ether");
       try {
-        console.log( "accounts");
-        console.log( accounts);
         let gas = 100000;
         if(theBankIsOracle){
           gas = 300000;
@@ -28,7 +26,6 @@ class Flip extends React.Component{
         this.props.updateFromComponent({loading: true});
         try{
           var responseFlip = await contract.methods.flip(currentBank).send({ from: accounts[0], value: parseInt(amountInWei), gas: gas});
-          console.log(responseFlip);
           if (responseFlip.events.ReturnValue.returnValues[2] === true){
             gameStatus = "Win";
           }

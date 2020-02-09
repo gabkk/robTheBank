@@ -94,8 +94,6 @@ class App extends Component {
       let listOfBank;
       try {
         listOfBank = await instance.methods.getListOfBank().call();
-        console.log("componentDidMount List of Bank");
-        console.log(listOfBank);
         this.setState({listOfBank: listOfBank});
         /*
         * bankObj
@@ -224,15 +222,16 @@ class App extends Component {
     let isBankOwner;
     try{
       isBankOwner = await this.state.contract.methods.isBankOwner(accounts[0]).call();
+        this.setState({isBankOwner: isBankOwner})
+        if(isBankOwner){
+          this.setState({displayWithraw: true});
+        } else {
+          this.setState({displayWithraw: false});
+        }
     } catch(error){
       console.log("failed to get isBankOwner accounts[0] : " + error);
     }
-    this.setState({isBankOwner: isBankOwner})
-    if(isBankOwner){
-      this.setState({displayWithraw: true});
-    } else {
-      this.setState({displayWithraw: false});
-    }
+
 
     if(accounts[0] !== this.state.accounts[0]){
       // Check if this user is the contract owner
@@ -264,8 +263,6 @@ class App extends Component {
     let listOfBank;
     try {
       listOfBank = await contract.methods.getListOfBank().call();
-      console.log("updateBankInfo List of Bank");
-      console.log(listOfBank);
       this.setState({listOfBank: listOfBank});
     } catch (error){
       console.log("list of bank empty");
@@ -274,7 +271,6 @@ class App extends Component {
     /*Get info about the selecte bank*/
     try{
       let theBankObj = await contract.methods.getBankInfos(listOfBank[setBankIndex]).call();
-      console.log(theBankObj);
       this.setState({selectedBankName: theBankObj[0],
                       selectedBankFund: theBankObj[1],
                       theBankIsOracle: theBankObj[3],

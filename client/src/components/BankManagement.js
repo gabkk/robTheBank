@@ -24,10 +24,8 @@ class BankManagement extends Component{
     };
 
   componentDidMount = async () => {
-
     if (this.props.contract){
       try{
-        console.log(this.props.contract);
           let isBankOwner = await this.props.contract.methods.isBankOwner(this.props.accounts[0]).call();
           if (isBankOwner){
             this.setState({displayWithraw: true});
@@ -150,8 +148,6 @@ class BankManagement extends Component{
     const { accounts, contract, web3 } = this.props;
     let listOfBank;
     let bankFund;
-    console.log(isNaN(this.state.sendFundToNewBank));
-    console.log("typeof(this.state.sendFundToNewBank)");
     if (isNaN(this.state.sendFundToNewBank)|| this.state.sendFundToNewBank === 0){
       return;
     } else {
@@ -242,7 +238,7 @@ class BankManagement extends Component{
               {this.state.loadingWithraw &&
                 <ReactLoading type={"cubes"} color={"white"} height={50} width={50} />
               }
-              {this.state.displayWithraw &&
+              {(this.props.displayWithraw || this.state.displayWithraw ) &&
               <Button type="button" className="success" onClick={this.withdraw.bind(this)} variant="success">Withdraw</Button>
               }
               <div className="ManagementBankInfo">
