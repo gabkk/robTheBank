@@ -2,10 +2,11 @@ import React from "react";
 import eth_icon from "../images/eth_icon.png";
 
 class Flip extends React.Component{
-  state = { sendAmountToBet: "0.1" };
+  state = { sendAmountToBet: "0.1",
+            oraclePrice: 0};
 
   flip = async () => {
-    const { accounts, contract, currentBank, myBankIsOracle, web3 } = this.props;
+    const { accounts, contract, currentBank, theBankIsOracle, web3 } = this.props;
     if (!isNaN(this.state.sendAmountToBet)){
       let bankBalance = 0;
       let userBalance = 0;
@@ -18,18 +19,15 @@ class Flip extends React.Component{
 
       var amountInWei = web3.utils.toWei(this.state.sendAmountToBet, "ether");
       try {
-        console.log("currentBank");
-        console.log(currentBank);
-        console.log("myBankIsOracle");
-        console.log(typeof(myBankIsOracle));
-        console.log(myBankIsOracle);
-        console.log(" amountInWei");
-        console.log( amountInWei);
         console.log( "accounts");
         console.log( accounts);
+        let gas = 100000;
+        if(theBankIsOracle){
+          gas = 300000;
+        }
         this.props.updateFromComponent({loading: true});
         try{
-          var responseFlip = await contract.methods.flip(currentBank, myBankIsOracle).send({ from: accounts[0], value: parseInt(amountInWei), gas: 90000});
+          var responseFlip = await contract.methods.flip(currentBank).send({ from: accounts[0], value: parseInt(amountInWei), gas: gas});
           console.log(responseFlip);
           if (responseFlip.events.ReturnValue.returnValues[2] === true){
             gameStatus = "Win";
@@ -84,6 +82,8 @@ class Flip extends React.Component{
   render(){
     return(
       <div className="actionRob">
+        {this.props.theBankIsOracle &&
+        <p className="notLimited">This Bank is using an Oracle (you will pay an extract amount to use it ~0.004 eth) but you are not limited to bet</p>}
         <p>Enter the value you want to rob (or loose)</p>
         <div className="enterValue">
           <img className="eth_icon" src={eth_icon} alt="eth_icons" />
@@ -91,6 +91,8 @@ class Flip extends React.Component{
           <p className="eth_text">Eth</p>
         </div>
         <button type="button" id="robItButton" onClick={this.flip.bind(this)}>Rob It !</button>
+        {!this.props.theBankIsOracle &&
+        <p className="limited">This Bank is not using an oracle Max amount 5 eth</p>}
       </div>
     );
   }

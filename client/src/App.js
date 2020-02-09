@@ -151,6 +151,7 @@ class App extends Component {
                     obj.name = events[i].returnValues.name;
                     obj.address = events[i].returnValues.addr;
                     obj.balance = events[i].returnValues.balance;
+                    obj.isOracle = events[i].returnValues.isOracle;
                     listOfBankObj = listOfBankObj.concat({obj});
                   }
                 }
@@ -258,12 +259,9 @@ class App extends Component {
   * Called when the user change the selected bank
   */
   updateBankInfo = async(event) => {
-    const { contract , accounts} = this.state;
+    const { contract } = this.state;
     let setBankIndex = event.target.value;
-    let listOfBank, isBankOwner;
-    let balance_of_bank = 0;
-    let myBankFund = 0;
-    let nameOfBank = "Default";
+    let listOfBank;
     try {
       listOfBank = await contract.methods.getListOfBank().call();
       console.log("updateBankInfo List of Bank");
@@ -273,60 +271,16 @@ class App extends Component {
       console.log("list of bank empty");
     }
 
-
     /*Get info about the selecte bank*/
     try{
       let theBankObj = await contract.methods.getBankInfos(listOfBank[setBankIndex]).call();
-      console.log("myBankObj");
       console.log(theBankObj);
-      let theBankName = theBankObj[0];
-      let theBankFund = theBankObj[1];
-      let theBankIsOracle = theBankObj[3];
-      console.log("METHOD to get all in once");
-      console.log(theBankName);
-      console.log(theBankFund);
-      console.log(theBankIsOracle);
-      // this.setState({isBankOwner: isBankOwner,
-      //                 myBankFund: myBankFund,
-      //                 myBankName: myBankName,
-      //                 myBankIsOracle: isBankIsOracle});
+      this.setState({selectedBankName: theBankObj[0],
+                      selectedBankFund: theBankObj[1],
+                      theBankIsOracle: theBankObj[3],
+                      currentBank: listOfBank[setBankIndex]});
     } catch(error){
       console.log("failed to getBankInfos of accounts[0] : " + error);
-    }
-
-    /*Set value for the selected bank*/
-    try {
-      balance_of_bank = await contract.methods.getBankBalance(listOfBank[setBankIndex]).call();
-      this.setState({ selectedBankFund: balance_of_bank,
-                      currentBank: listOfBank[setBankIndex]});
-    } catch (error){
-      console.log("fail to get Bank balance");
-    }
-
-    try {
-      nameOfBank = await contract.methods.getBankName(listOfBank[setBankIndex]).call();
-      this.setState({ selectedBankName: nameOfBank });
-    } catch (error){
-      console.log("fail to get Bank balance");
-    }
-
-    /*Check if the user bank is valid to display withdraw*/
-    try {
-      myBankFund = await contract.methods.getBankBalance(accounts[0]).call();
-    } catch (error){
-      console.log("fail to get Bank balance");
-    }
-
-    try {
-      isBankOwner = await contract.methods.isBankOwner(accounts[0]).call();
-      this.setState({isBankOwner: isBankOwner});
-    } catch (error){
-      console.log("isBankOwner failed");
-    }
-    if(myBankFund !== "0"){
-      this.setState({displayWithraw: true});
-    } else {
-      this.setState({displayWithraw: false});
     }
   }
 
@@ -410,7 +364,7 @@ class App extends Component {
                   contract={this.state.contract}
                   currentBank={this.state.currentBank}
                   web3={this.state.web3}
-
+                  theBankIsOracle={this.state.theBankIsOracle}
                   updateFromComponent={this.updateFromComponent.bind(this)} />
           </div>
         </div>

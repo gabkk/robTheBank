@@ -169,12 +169,15 @@ class BankManagement extends Component{
       console.log(valueInWei);
 
       await contract.methods.createBank(this.state.nameToCreateBank, this.state.toggleActive).send({from: accounts[0], value: valueInWei});
-      console.log("yoyoyoyo");
+      /*Bank creation successful to we display the withdraw button*/
+
+      this.setState({displayWithraw: true});
       try {
-        bankFund = await contract.methods.getBankBalance(this.state.currentBank).call();
+        bankFund = await contract.methods.getBankBalance(accounts[0]).call();
       } catch (error){
         console.log("BankManagement createNewBank fail to get Bank balance");
       }
+
       try {
         listOfBank = await contract.methods.getListOfBank().call();
       } catch (error){
@@ -192,6 +195,7 @@ class BankManagement extends Component{
                 obj.name = events[events.length-1].returnValues.name;
                 obj.address = events[events.length-1].returnValues.addr;
                 obj.balance = events[events.length-1].returnValues.balance;
+                obj.isOracle = events[events.length-1].returnValues.isOracle;
                 const listOfBankObj = state.listOfBankObj.concat({obj});
                 return {
                   listOfBankObj
