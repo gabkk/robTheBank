@@ -5,7 +5,7 @@ class Flip extends React.Component{
   state = { sendAmountToBet: "0.1" };
 
   flip = async () => {
-    const { accounts, contract, currentBank, web3 } = this.props;
+    const { accounts, contract, currentBank, myBankIsOracle, web3 } = this.props;
     if (!isNaN(this.state.sendAmountToBet)){
       let bankBalance = 0;
       let userBalance = 0;
@@ -18,14 +18,28 @@ class Flip extends React.Component{
 
       var amountInWei = web3.utils.toWei(this.state.sendAmountToBet, "ether");
       try {
-        
+        console.log("currentBank");
+        console.log(currentBank);
+        console.log("myBankIsOracle");
+        console.log(typeof(myBankIsOracle));
+        console.log(myBankIsOracle);
+        console.log(" amountInWei");
+        console.log( amountInWei);
+        console.log( "accounts");
+        console.log( accounts);
         this.props.updateFromComponent({loading: true});
-        var responseFlip = await contract.methods.flip(currentBank).send({ from: accounts[0], value: parseInt(amountInWei), gas: 70000});
-        if (responseFlip.events.ReturnValue.returnValues[0] === true){
-          gameStatus = "Win";
-        }
-        else {
-          gameStatus = "Loose";
+        try{
+          var responseFlip = await contract.methods.flip(currentBank, myBankIsOracle).send({ from: accounts[0], value: parseInt(amountInWei), gas: 90000});
+          console.log(responseFlip);
+          if (responseFlip.events.ReturnValue.returnValues[2] === true){
+            gameStatus = "Win";
+          }
+          else {
+            gameStatus = "Loose";
+          }
+        } catch(error){
+          console.log("flip methods failed");
+          console.log(error);
         }
         try {
           userHistory = await contract.methods.getUserHistory(accounts[0]).call();
@@ -55,7 +69,8 @@ class Flip extends React.Component{
       } catch (error){
         el.innerHTML = "Robbery Failed";
         this.props.updateFromComponent({loading: false});
-        console.log("error When fliping"+ error);
+        console.log("error When fliping");
+        console.log(error);
       } 
     }
   };

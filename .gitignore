@@ -1,6 +1,6 @@
 client/src/contracts/CoinFlip.json
 client/src/contracts/Migrations.json
-client/src/contracts/
+client/src/contracts
 truffle-config.js
 .truffle-config.js.swp
 .secret

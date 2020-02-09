@@ -33,19 +33,22 @@ class App extends Component {
       contract: null,
       selectedBankFund: 0,
       selectedBankName: 'Default',
-      myBankFund: 0,
       userFund: 0,
       userHistory: 0,
       lastFlip: "not played yet !!! Try to rob a bank",
+      myBankFund: 0,
       myBankName: null,
+      theBankIsOracle: false,
       listOfBank: null,
       loading: false,
       displayWithraw: false,
       isBankOwner: false,
+      isContractOwner: false,
       listOfBankObj: []
     }
     this.updateBankInfo = this.updateBankInfo.bind(this)
     this.updateInterface = this.updateInterface.bind(this);
+    this.destroy = this.destroy.bind(this);
   };
 
   componentDidMount = async () => {
@@ -68,12 +71,26 @@ class App extends Component {
           RobTheBank.abi,
           deployedNetwork && deployedNetwork.address
         );
+      // Check if this user is the contract owner
+      let owner = await instance.methods.owner().call();
+      if (owner === accounts[0]){
+        this.setState({isContractOwner: true});
+      }
 
-        // Show the contract balance
-        let userAmount = 0;
-        await web3.eth.getBalance(accounts[0], (err, balance) => {
-          userAmount =  web3.utils.fromWei(balance) + " ETH";
-        });
+      let isBankOwner = false;
+      try{
+        isBankOwner = await instance.methods.isBankOwner(accounts[0]).call();
+        this.setState({isBankOwner: isBankOwner});
+      } catch(error){
+        console.log("failed to get isBankOwner accounts[0] : " + error);
+      }
+
+      // Show the contract balance
+      let userAmount = 0;
+      await web3.eth.getBalance(accounts[0], (err, balance) => {
+        userAmount =  web3.utils.fromWei(balance) + " ETH";
+      });
+
       let listOfBank;
       try {
         listOfBank = await instance.methods.getListOfBank().call();
@@ -101,15 +118,16 @@ class App extends Component {
         /* Get infos related to the accounts bank if there is one*/
         let myBankFund = 0;
         let myBankName = "Not set";
-        let isBankOwner = false;
+        let isBankIsOracle = false;
         try{
           let myBankObj = await instance.methods.getBankInfos(accounts[0]).call();
           myBankName = myBankObj[0];
           myBankFund = myBankObj[1];
-          isBankOwner = myBankObj[2];
+          isBankIsOracle = myBankObj[3];
           this.setState({isBankOwner: isBankOwner,
                           myBankFund: myBankFund,
-                          myBankName: myBankName});
+                          myBankName: myBankName,
+                          theBankIsOracle: isBankIsOracle});
         } catch(error){
           console.log("failed to getBankInfos of accounts[0] : " + error);
         }
@@ -165,7 +183,7 @@ class App extends Component {
                         listOfBank: listOfBank,
                         displayWithraw: displayWithraw,
                         currentBank: listOfBank[0],
-                      }, this.runExample);
+                      });
 
         // Loop To catch user wallet changes
         setInterval(async () => {
@@ -187,11 +205,36 @@ class App extends Component {
     displayRobQuote();
   };
 
+  destroy = async () =>{
+    let ret = await this.state.contract.methods.destroyContract().send({from: this.state.accounts[0]});
+    console.log(ret);
+  };
+
   updateInterface = async (accounts) =>{
     /*
     * Add a pop  up to show user change account
     */
+    let owner = await this.state.contract.methods.owner().call();
+    if (owner === accounts[0]){
+      this.setState({isContractOwner: true});
+    } else{
+      this.setState({isContractOwner: false});
+    }
+    let isBankOwner;
+    try{
+      isBankOwner = await this.state.contract.methods.isBankOwner(accounts[0]).call();
+    } catch(error){
+      console.log("failed to get isBankOwner accounts[0] : " + error);
+    }
+    this.setState({isBankOwner: isBankOwner})
+    if(isBankOwner){
+      this.setState({displayWithraw: true});
+    } else {
+      this.setState({displayWithraw: false});
+    }
+
     if(accounts[0] !== this.state.accounts[0]){
+      // Check if this user is the contract owner
       try{
         let userAmount = 0;
         await this.state.web3.eth.getBalance(accounts[0], (err, balance) => {
@@ -201,19 +244,7 @@ class App extends Component {
       } catch (error){
         console.log("fail to get user balance"+error);
       }
-            /* Get infos related to the accounts bank if there is one*/
-      let isBankOwner;
-      try{
-        isBankOwner = await this.state.contract.methods.isBankOwner(accounts[0]).call();
-      } catch(error){
-        console.log("failed to get isBankOwner accounts[0] : " + error);
-      }
-      this.setState({isBankOwner: isBankOwner})
-      if(isBankOwner){
-        this.setState({displayWithraw: true});
-      } else {
-        this.setState({displayWithraw: false});
-      }
+            /* Get infos related to the accounts bank if there is one*/ 
       try {
         let userHistory = await this.state.contract.methods.getUserHistory(accounts[0]).call();
         this.setState({userHistory: userHistory});
@@ -222,21 +253,6 @@ class App extends Component {
       }
     }
   }
-
-  runExample = async () => {
-
-    const { contract } = this.state;
-    try {
-
-      // // Get the value from the contract to prove it worked.
-      const response = await contract.methods.getBankBalance(this.state.currentBank).call();
-      // Update state with the result.
-      this.setState({ selectedBankFund: response });
-      
-    } catch (error){
-        console.log("fail to get balance");
-    }
-  };
 
   /*
   * Called when the user change the selected bank
@@ -255,6 +271,27 @@ class App extends Component {
       this.setState({listOfBank: listOfBank});
     } catch (error){
       console.log("list of bank empty");
+    }
+
+
+    /*Get info about the selecte bank*/
+    try{
+      let theBankObj = await contract.methods.getBankInfos(listOfBank[setBankIndex]).call();
+      console.log("myBankObj");
+      console.log(theBankObj);
+      let theBankName = theBankObj[0];
+      let theBankFund = theBankObj[1];
+      let theBankIsOracle = theBankObj[3];
+      console.log("METHOD to get all in once");
+      console.log(theBankName);
+      console.log(theBankFund);
+      console.log(theBankIsOracle);
+      // this.setState({isBankOwner: isBankOwner,
+      //                 myBankFund: myBankFund,
+      //                 myBankName: myBankName,
+      //                 myBankIsOracle: isBankIsOracle});
+    } catch(error){
+      console.log("failed to getBankInfos of accounts[0] : " + error);
     }
 
     /*Set value for the selected bank*/
@@ -317,6 +354,9 @@ class App extends Component {
               <Nav.Link href="#info">Info</Nav.Link>
             </Nav>
             <Nav>
+              {this.state.isContractOwner &&
+                <Nav.Link><button type="button" className="btn btn-danger" onClick={this.destroy.bind(this)}>Destroy</button></Nav.Link>
+              }
               <Nav.Link>Balance of your wallet: {this.state.userFund}</Nav.Link>
               <Nav.Link>Account: {this.state.accounts[0]}</Nav.Link>
             </Nav>
@@ -370,6 +410,7 @@ class App extends Component {
                   contract={this.state.contract}
                   currentBank={this.state.currentBank}
                   web3={this.state.web3}
+
                   updateFromComponent={this.updateFromComponent.bind(this)} />
           </div>
         </div>

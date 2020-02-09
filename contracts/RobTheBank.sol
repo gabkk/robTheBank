@@ -69,7 +69,7 @@ contract RobTheBank is usingProvable{
 
 		setBanks(msg.value, "FED", true, true);
 		setListOfBank(msg.sender);
-		provable_setProof(proofType_Ledger);
+		//provable_setProof(proofType_Ledger);
 		emit LogListOfBank("FED", msg.sender, msg.value);
 	}
 

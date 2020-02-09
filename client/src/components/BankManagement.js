@@ -17,19 +17,24 @@ class BankManagement extends Component{
             loadingWithraw: false,
             myBankFund: this.props.myBankFund,
             myBankName: this.props.myBankName,
-            listOfBankObj: this.props.listOfBankObj
+            listOfBankObj: this.props.listOfBankObj,
+            toggleActive: false
         }
+        this.onToggle = this.onToggle.bind(this);
     };
 
   componentDidMount = async () => {
 
-    try{
-      let isBankOwner = await this.props.contract.methods.isBankOwner(this.props.accounts[0]).call();
-      if (isBankOwner){
-        this.setState({displayWithraw: true});
+    if (this.props.contract){
+      try{
+        console.log(this.props.contract);
+          let isBankOwner = await this.props.contract.methods.isBankOwner(this.props.accounts[0]).call();
+          if (isBankOwner){
+            this.setState({displayWithraw: true});
+        }
+      } catch(error){
+        console.log("failed to get isBankOwner accounts[0] : " + error);
       }
-    } catch(error){
-      console.log("failed to get isBankOwner accounts[0] : " + error);
     }
 
     // Loop To catch user wallet changes
@@ -38,6 +43,10 @@ class BankManagement extends Component{
     }
   };
 
+  onToggle = () => {
+    this.setState({ toggleActive: !this.state.toggleActive });
+  }
+
   // stopTimer = () => {
   //   console.log("stoooop");
   //   clearInterval(this.timer);
@@ -45,15 +54,17 @@ class BankManagement extends Component{
 
   launchTimer= () => {
     this.timer = setInterval(async () => {
-        try{
-          let myBankObj = await this.props.contract.methods.getBankInfos(this.props.accounts[0]).call();
-          //console.log("Inside UPDATE INTERFACE");
-          //console.log(myBankObj);
-          this.setState({ myBankName: myBankObj[0],
-                          myBankFund: myBankObj[1],
-                          isBankOwner: myBankObj[2]});
-        } catch(error){
-          console.log("failed to getBankInfos of accounts[0] : " + error);
+        if (this.props.contract){
+          try{
+            let myBankObj = await this.props.contract.methods.getBankInfos(this.props.accounts[0]).call();
+            //console.log("Inside UPDATE INTERFACE");
+            //console.log(myBankObj);
+            this.setState({ myBankName: myBankObj[0],
+                            myBankFund: myBankObj[1],
+                            isBankOwner: myBankObj[2]});
+          } catch(error){
+            console.log("failed to getBankInfos of accounts[0] : " + error);
+          }
         }
       }, 1000);
   }
@@ -139,15 +150,26 @@ class BankManagement extends Component{
     const { accounts, contract, web3 } = this.props;
     let listOfBank;
     let bankFund;
-
-    if (this.state.sendFundToNewBank === 0){
+    console.log(isNaN(this.state.sendFundToNewBank));
+    console.log("typeof(this.state.sendFundToNewBank)");
+    if (isNaN(this.state.sendFundToNewBank)|| this.state.sendFundToNewBank === 0){
       return;
     } else {
       this.setState({loadingSend: true});
     }
     let valueInWei = web3.utils.toWei(this.state.sendFundToNewBank, "ether")
     try{
-      await contract.methods.createBank(this.state.nameToCreateBank).send({from: accounts[0], value: valueInWei});
+      console.log("Before create Bank");
+      console.log(this.state.toggleActive);
+      console.log(typeof(this.state.toggleActive));
+      console.log(this.state.nameToCreateBank);
+      console.log(typeof(this.state.nameToCreateBank));
+      console.log(this.state.sendFundToNewBank);
+      console.log(accounts[0]);
+      console.log(valueInWei);
+
+      await contract.methods.createBank(this.state.nameToCreateBank, this.state.toggleActive).send({from: accounts[0], value: valueInWei});
+      console.log("yoyoyoyo");
       try {
         bankFund = await contract.methods.getBankBalance(this.state.currentBank).call();
       } catch (error){
@@ -263,6 +285,17 @@ class BankManagement extends Component{
                 maxLength="20"
                 onChange={ this.setAmount }
               />
+              <div className='custom-control custom-switch'>
+                <input
+                  type='checkbox'
+                  className='custom-control-input'
+                  id='customSwitchesChecked'
+                  onClick={this.onToggle.bind(this)}
+                />
+                <label className='custom-control-label' htmlFor='customSwitchesChecked'>
+                  Is using oracle
+                </label>
+              </div>
               <InputGroup.Append>
                 <Button type="button" className="NewBankButton" onClick={this.createNewBank.bind(this)} variant="outline-secondary">
                   create new bank
