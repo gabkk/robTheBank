@@ -35,7 +35,7 @@ class App extends Component {
       selectedBankName: 'Default',
       userFund: 0,
       userHistory: 0,
-      lastFlip: "not played yet !!! Try to rob a bank",
+      lastFlip: "not played yet",
       myBankFund: 0,
       myBankName: null,
       theBankIsOracle: false,
@@ -44,6 +44,7 @@ class App extends Component {
       displayWithraw: false,
       isBankOwner: false,
       isContractOwner: false,
+      errorFlip: false,
       listOfBankObj: []
     }
     this.updateBankInfo = this.updateBankInfo.bind(this)
@@ -109,6 +110,7 @@ class App extends Component {
           let firstBankObj = await instance.methods.getBankInfos(listOfBank[0]).call();
           selectedBankName = firstBankObj[0];
           initialAmount = firstBankObj[1];
+          this.setState({theBankIsOracle: firstBankObj[3]});
         } catch(error){
           console.log("failed to getBankInfos of listOfBank[0] : " + error);
         }
@@ -124,8 +126,7 @@ class App extends Component {
           isBankIsOracle = myBankObj[3];
           this.setState({isBankOwner: isBankOwner,
                           myBankFund: myBankFund,
-                          myBankName: myBankName,
-                          theBankIsOracle: isBankIsOracle});
+                          myBankName: myBankName});
         } catch(error){
           console.log("failed to getBankInfos of accounts[0] : " + error);
         }
@@ -149,7 +150,7 @@ class App extends Component {
                     obj.name = events[i].returnValues.name;
                     obj.address = events[i].returnValues.addr;
                     obj.balance = events[i].returnValues.balance;
-                    obj.isOracle = events[i].returnValues.isOracle;
+                    obj.isOracle = events[i].returnValues.usingOracle;
                     listOfBankObj = listOfBankObj.concat({obj});
                   }
                 }
@@ -213,6 +214,7 @@ class App extends Component {
     /*
     * Add a pop  up to show user change account
     */
+    this.setState({errorFlip: false});
     let owner = await this.state.contract.methods.owner().call();
     if (owner === accounts[0]){
       this.setState({isContractOwner: true});
@@ -261,6 +263,9 @@ class App extends Component {
     const { contract } = this.state;
     let setBankIndex = event.target.value;
     let listOfBank;
+    
+    this.setState({errorFlip: false});
+
     try {
       listOfBank = await contract.methods.getListOfBank().call();
       this.setState({listOfBank: listOfBank});
@@ -300,7 +305,6 @@ class App extends Component {
           <Navbar.Toggle aria-controls="responsive-navbar-nav" />
           <Navbar.Collapse id="responsive-navbar-nav">
             <Nav className="mr-auto">
-              <Nav.Link href="#comingSoon">swarm version</Nav.Link>
               <Nav.Link href="#info">Info</Nav.Link>
             </Nav>
             <Nav>
@@ -309,6 +313,7 @@ class App extends Component {
               }
               <Nav.Link>Balance of your wallet: {this.state.userFund}</Nav.Link>
               <Nav.Link>Account: {this.state.accounts[0]}</Nav.Link>
+              <Nav href="#comingSoon" className="navNetwork">Live on ropsten network &nbsp;<span className="dot"></span></Nav>
             </Nav>
           </Navbar.Collapse>
         </Navbar>
@@ -361,6 +366,7 @@ class App extends Component {
                   currentBank={this.state.currentBank}
                   web3={this.state.web3}
                   theBankIsOracle={this.state.theBankIsOracle}
+                  errorFlip={this.state.errorFlip}
                   updateFromComponent={this.updateFromComponent.bind(this)} />
           </div>
         </div>

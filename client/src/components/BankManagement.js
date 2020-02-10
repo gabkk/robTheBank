@@ -191,7 +191,7 @@ class BankManagement extends Component{
                 obj.name = events[events.length-1].returnValues.name;
                 obj.address = events[events.length-1].returnValues.addr;
                 obj.balance = events[events.length-1].returnValues.balance;
-                obj.isOracle = events[events.length-1].returnValues.isOracle;
+                obj.isOracle = events[events.length-1].returnValues.usingOracle;
                 const listOfBankObj = state.listOfBankObj.concat({obj});
                 return {
                   listOfBankObj

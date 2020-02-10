@@ -22,7 +22,7 @@ class AppNotConnected extends Component{
       myBankFund: 0,
       userFund: 0,
       userHistory: 0,
-      lastFlip: "not played yet !!! Try to rob a bank",
+      lastFlip: "not played yet",
       myBankName: null,
       listOfBank: null,
       displayWithraw: false,
@@ -39,12 +39,12 @@ class AppNotConnected extends Component{
           <Navbar.Toggle aria-controls="responsive-navbar-nav" />
           <Navbar.Collapse id="responsive-navbar-nav">
             <Nav className="mr-auto">
-              <Nav.Link href="#comingSoon">swarm version</Nav.Link>
               <Nav.Link href="#info">Info</Nav.Link>
             </Nav>
             <Nav>
-              <Nav.Link>Balance of your wallet: {this.state.userFund}</Nav.Link>
-              <Nav.Link>Account: Not connected</Nav.Link>
+              <Nav.Link>Balance of your wallet: 0</Nav.Link>
+              <Nav.Link>Account: 0xDEADBEEF</Nav.Link>
+              <Nav href="#comingSoon" className="navNetwork">Live on ropsten network &nbsp;<span className="dot"></span></Nav>
             </Nav>
           </Navbar.Collapse>
         </Navbar>
@@ -74,7 +74,7 @@ class AppNotConnected extends Component{
           	</p>
           	<iframe width="853" height="480"
           			title="metamask"
-          			src="https://www.youtube.com/embed/ZIGUC9JAAw8&origin=http://localhost"
+          			src="https://www.youtube.com/embed/ZIGUC9JAAw8"
           			frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           			allowFullScreen></iframe>
           </div>

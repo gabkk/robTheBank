@@ -3,8 +3,6 @@ import "../stylesheets/application/_select.scss"
 
 class SelectBank extends React.Component{
   componentDidMount(props){
-    console.log("this.props");
-    console.log(this.props);
   }
 
     render(){
