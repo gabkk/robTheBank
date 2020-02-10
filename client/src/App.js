@@ -118,12 +118,10 @@ class App extends Component {
         /* Get infos related to the accounts bank if there is one*/
         let myBankFund = 0;
         let myBankName = "Not set";
-        let isBankIsOracle = false;
         try{
           let myBankObj = await instance.methods.getBankInfos(accounts[0]).call();
           myBankName = myBankObj[0];
           myBankFund = myBankObj[1];
-          isBankIsOracle = myBankObj[3];
           this.setState({isBankOwner: isBankOwner,
                           myBankFund: myBankFund,
                           myBankName: myBankName});
@@ -344,7 +342,7 @@ class App extends Component {
             />
             <div>Bank Balance {this.state.web3.utils.fromWei(this.state.selectedBankFund, "ether")} Eth
             </div>
-            <img src={image_bank} alt="image_bank" />
+            <img src={image_bank} className="imageBank" alt="image_bank" />
             <div id="loadingRoberyTitle">Robbery not started</div>
             {this.state.loading &&
                 <ReactLoading className="loadingRobbery" type={"cylon"} color={"#071134"} height={50} width={50} />
@@ -358,7 +356,7 @@ class App extends Component {
           <div className="gameInteraction">
             <h5> You have {this.state.lastFlip}</h5>
             <h5>History: {this.state.web3.utils.fromWei(this.state.userHistory, "ether")} Eth</h5>
-            <img src={image_gangster} alt="image_gangster" />
+            <img src={image_gangster} className="imageGangster" alt="imageGangster" />
             <Flip 
                   loading={this.state.loading}
                   accounts={this.state.accounts}

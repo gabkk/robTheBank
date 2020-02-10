@@ -1,3 +1,34 @@
+
+
+@font-face {
+  font-family: StrickenBrush;
+  src: url(../../font/StrickenBrush.otf);
+}
+
+.BankManagementMenu {
+  font-family: StrickenBrush;
+  font-size: 40px;
+  margin-right: 60px;
+}
+
+.BankManagementCreate{
+  font-family: StrickenBrush;
+  font-size: 40px;
+  margin-right: 60px;	
+}
+
+.imageGangster{
+	width: 80%;
+	height: 80%;
+}
+
+.imageBank{
+	width: 80%;
+	height: 80%;
+}
+
+
+
 %menu-elem {
 	margin-top: 50px;
 	color: white;
@@ -104,7 +135,7 @@
 	}
 
 	.notLimited{
-		color: green;
+		color: #496bf6;
 	}
 
 	#robItButton{
@@ -126,7 +157,7 @@
 }
 
 .ManagementContainer{
-	width: 50%;
+	width: 70%;
 	margin: auto;
 	button {
 		margin-left: 50px;

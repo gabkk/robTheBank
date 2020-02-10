@@ -233,8 +233,8 @@ class BankManagement extends Component{
     return(
       <div className="ManagementContainer">
         {this.props.isBankOwner ? (
-          <div>
             <InputGroup>
+              <p className="BankManagementMenu">My Bank</p>
               {this.state.loadingWithraw &&
                 <ReactLoading type={"cubes"} color={"white"} height={50} width={50} />
               }
@@ -262,10 +262,10 @@ class BankManagement extends Component{
                 <ReactLoading type={"bubbles"} color={"white"} height={50} width={50} />
               }
             </InputGroup>
-          </div>
           ) : (
           <div>
             <InputGroup >
+              <p className="BankManagementCreate">Create your own bank now -></p>
               <p>Value</p>
               <FormControl
                 placeholder="0"
