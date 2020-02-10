@@ -44,8 +44,8 @@ contract RobTheBank is usingProvable{
 	mapping(address => Bank) private Banks;
 
 	event ReturnValue(address _sender, uint256 _randomNumber, bool _value);
-	event ReturnValue(bytes32 _queryId, uint256 _randomNumber, bool _value);
-    event LogListOfBank(string name, address addr, uint256 balance);
+	event OracleCallback(bytes32 _queryId, uint256 _randomNumber, bool _value);
+    event LogListOfBank(string name, address addr, uint256 balance, bool usingOracle);
     /*
     * Oracle events
     */
@@ -69,8 +69,8 @@ contract RobTheBank is usingProvable{
 
 		setBanks(msg.value, "FED", true, true);
 		setListOfBank(msg.sender);
-		//provable_setProof(proofType_Ledger);
-		emit LogListOfBank("FED", msg.sender, msg.value);
+		provable_setProof(proofType_Ledger);
+		emit LogListOfBank("FED", msg.sender, msg.value, true);
 	}
 
 	// add name to the bank Struct
@@ -81,7 +81,7 @@ contract RobTheBank is usingProvable{
 		require(msg.value >= 0.1 ether);
         setBanks(msg.value, _name, true, _isUsingOracle);
 		setListOfBank(msg.sender);
-		emit LogListOfBank(_name, msg.sender, msg.value);
+		emit LogListOfBank(_name, msg.sender, msg.value, _isUsingOracle);
 	}
 
 	/* Todo test view */
@@ -90,7 +90,8 @@ contract RobTheBank is usingProvable{
 			emit LogListOfBank(
 			        getBankName(listOfBank[i]),
 			        listOfBank[i],
-			        getBankBalance(listOfBank[i])
+			        getBankBalance(listOfBank[i]),
+			        getBankIsOracle(listOfBank[i])
 			     );
 		}
 	}
@@ -132,16 +133,20 @@ contract RobTheBank is usingProvable{
             uint8 result = uint8(firstRes.mod(251));
 
             bool flipStatus = flipProcessResult(result, _queryId);
-            emit ReturnValue(_queryId, result, flipStatus);
+            emit OracleCallback(_queryId, result, flipStatus);
             address userAddr =  pendingQueries[_queryId].userAddr;
             RobberInfo[userAddr].isAllowToPlay = true;
             delete pendingQueries[_queryId];
         }
     }
 
-	function flip(address _bankAddr, bool _isBankUsingOracle) public payable{
+	function flip(address _bankAddr) public payable{
 		// TODO remove this just need to check than we get money to pay the oracle fee
-		require(msg.value < 10 ether, "bet should be less than 10 eth");
+		if (!Banks[_bankAddr].usingOracle){
+			require(msg.value < 5 ether, "bet should be less than 10 eth");
+		} else {
+			require(msg.value < 10 ether, "bet should be less than 10 eth");
+		}
 		require(msg.value >= 0.01 ether, "bet should more than 0.01 eth");
 
 		// Check if the player is still waiting for a responce from a previous game
@@ -154,7 +159,7 @@ contract RobTheBank is usingProvable{
 		RobberInfo[msg.sender].isAllowToPlay = false;
 
 		// Use a different function regarding if the bank is using an oracle or not
-		if (_isBankUsingOracle == true){
+		if (Banks[_bankAddr].usingOracle == true){
 			_oracleRandom(_bankAddr);
 		} else {
 			uint8 randomResult = _pseudoRandom();
@@ -178,6 +183,10 @@ contract RobTheBank is usingProvable{
 
 	function getBankBalance(address _bankAddr)public view returns(uint256){
 		return Banks[_bankAddr].balance;
+	}
+
+	function getBankIsOracle(address _bankAddr)public view returns(bool){
+		return Banks[_bankAddr].usingOracle;
 	}
 
 	function getBankName(address _bankAddr)public view returns(string memory){
@@ -270,6 +279,7 @@ contract RobTheBank is usingProvable{
 		} else {
 			Banks[_bankAddr].balance = Banks[_bankAddr].balance.add(_value);
 			// Not really safe to cast but the value is high enought to be a problem
+			_value = _value.sub(pendingQueries[_queryId].qPrice);
 			userHistory[_usrAddr] = userHistory[_usrAddr].sub(int256(_value));
 		    flipStatus = false;
 		}
